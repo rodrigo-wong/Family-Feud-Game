@@ -1,6 +1,6 @@
 const VOLUME_KEY = 'familyFeudVolume';
 const listeners = new Set();
-const playingAudio = new Set();
+let currentAudio = null;
 
 let volume = (() => {
   const raw = localStorage.getItem(VOLUME_KEY);
@@ -14,9 +14,9 @@ export const getVolume = () => volume;
 export const setVolume = (value) => {
   volume = Math.min(1, Math.max(0, value));
   localStorage.setItem(VOLUME_KEY, String(volume));
-  playingAudio.forEach((audio) => {
-    audio.volume = volume;
-  });
+  if (currentAudio) {
+    currentAudio.volume = volume;
+  }
   listeners.forEach((listener) => listener(volume));
 };
 
@@ -26,9 +26,16 @@ export const subscribeVolume = (listener) => {
 };
 
 export const playSound = (src) => {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
   const audio = new Audio(src);
   audio.volume = volume;
-  playingAudio.add(audio);
-  audio.addEventListener('ended', () => playingAudio.delete(audio));
+  currentAudio = audio;
+  audio.addEventListener('ended', () => {
+    if (currentAudio === audio) currentAudio = null;
+  });
   audio.play();
 };

@@ -7,6 +7,15 @@ import { playSound } from '../utils/audio';
 function Intro() {
         const navigate = useNavigate();
         const [show, setShow] = useState(true);
+        const hasQuestions = (() => {
+            try {
+                const stored = localStorage.getItem('familyFeudQuestions');
+                const questions = stored ? JSON.parse(stored) : [];
+                return Array.isArray(questions) && questions.length > 0;
+            } catch {
+                return false;
+            }
+        })();
         const handlePlayGame = () => {
             playSound(introSound);
             setShow(false)
@@ -28,7 +37,8 @@ function Intro() {
                     <button
                         type="button"
                         onClick={handlePlayGame}
-                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                        disabled={!hasQuestions}
+                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-900 hover:bg-gray-800 cursor-pointer"
                     >
                         START GAME
                     </button>
