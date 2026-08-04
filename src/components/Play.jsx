@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 const SLOT_COUNT = 8;
 
 function Play() {
-  const [teamOneScore] = useState(0);
-  const [teamTwoScore] = useState(0);
-  const [showQuestion, setShowQuestion] = useState(false);
+  const [teamOneScore, setTeamOneScore] = useState(0);
+  const [teamTwoScore, setTeamTwoScore] = useState(0);
+  const [step, setStep] = useState('board'); // 'board' | 'assign' | 'gameOver'
+  const [showQuestion, setShowQuestion] = useState(true);
   const [strikes, setStrikes] = useState(0);
   const [revealed, setRevealed] = useState(() => new Set());
 
@@ -32,18 +32,47 @@ function Play() {
   };
 
   const revealAnswer = (index) => {
+    if (step !== 'board') return;
     if (index >= currentAnswers.length) return;
     setRevealed((prev) => new Set(prev).add(index));
   };
 
   const goToQuestion = (index) => {
     setQuestionIndex(index);
-    setShowQuestion(false);
+    setStep('board');
+    setShowQuestion(true);
     setStrikes(0);
     setRevealed(new Set());
   };
-  const goPrev = () => goToQuestion(Math.max(questionIndex - 1, 0));
-  const goNext = () => goToQuestion(Math.min(questionIndex + 1, game.length - 1));
+
+  const assignPoints = (team) => {
+    if (team === 1) {
+      setTeamOneScore((prev) => prev + questionPoints);
+    } else {
+      setTeamTwoScore((prev) => prev + questionPoints);
+    }
+
+    if (questionIndex < game.length - 1) {
+      goToQuestion(questionIndex + 1);
+    } else {
+      setStep('gameOver');
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'ArrowRight' || game.length === 0) return;
+      e.preventDefault();
+      if (showQuestion) {
+        setShowQuestion(false);
+        return;
+      }
+      setStep((prev) => (prev === 'board' ? 'assign' : prev));
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [game.length, showQuestion]);
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
@@ -84,7 +113,7 @@ function Play() {
                       <button
                         type="button"
                         onClick={() => revealAnswer(i)}
-                        disabled={!answer || isRevealed}
+                        disabled={!answer || isRevealed || step !== 'board'}
                         className={`relative w-full h-11 sm:h-14 [transform-style:preserve-3d] transition-transform duration-500 ease-in-out ${
                           isRevealed ? '[transform:rotateX(180deg)]' : ''
                         } ${answer ? 'cursor-pointer' : 'cursor-default'}`}
@@ -117,7 +146,7 @@ function Play() {
                 })}
               </div>
 
-              {!showQuestion && strikes > 0 && (
+              {step === 'board' && strikes > 0 && (
                 <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 rounded-[2.5rem] z-30">
                   {Array.from({ length: strikes }).map((_, i) => (
                     <span
@@ -138,21 +167,46 @@ function Play() {
                 </p>
               </div>
             )}
+
+            {!showQuestion && step === 'assign' && (
+              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-6 px-6 sm:px-10 z-40">
+                <p className="text-center text-white text-xl sm:text-3xl font-bold">
+                  Award {questionPoints} points to:
+                </p>
+                <div className="flex gap-6">
+                  <button
+                    type="button"
+                    onClick={() => assignPoints(1)}
+                    className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
+                  >
+                    Team 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => assignPoints(2)}
+                    className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
+                  >
+                    Team 2
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!showQuestion && step === 'gameOver' && (
+              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 px-6 sm:px-10 z-40">
+                <p className="text-white text-2xl sm:text-4xl font-extrabold">Game Over!</p>
+                <p className="text-white text-lg sm:text-2xl font-bold">
+                  {teamOneScore === teamTwoScore
+                    ? "It's a tie!"
+                    : `Team ${teamOneScore > teamTwoScore ? 1 : 2} wins!`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {game.length > 0 && (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={goPrev}
-              disabled={questionIndex === 0}
-              className="text-2xl px-2 cursor-pointer hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed"
-              aria-label="Previous question"
-            >
-              ‹‹
-            </button>
-
+          <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2">
               {game.map((q, i) => (
                 <button
@@ -167,51 +221,48 @@ function Play() {
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={questionIndex === game.length - 1}
-              className="text-2xl px-2 cursor-pointer hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed"
-              aria-label="Next question"
-            >
-              ››
-            </button>
-
             <span className="text-white/60 text-sm">
               Question {questionIndex + 1} of {game.length}
             </span>
+
+            {(showQuestion || step === 'board') && (
+              <span className="text-white/60 text-sm">Press → to continue</span>
+            )}
           </div>
         )}
       </div>
-        <div className="flex flex-wrap items-center justify-center gap-78 pb-2">
+      <div className="flex flex-wrap items-center justify-center gap-8 pb-2">
+        <button
+          type="button"
+          onClick={() => setShowQuestion((prev) => !prev)}
+          className={`rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition ${
+            showQuestion
+              ? 'bg-yellow-400 text-black'
+              : 'bg-gray-900 hover:bg-[#123086]'
+          }`}
+        >
+          Show Question
+        </button>
+
+        <div className="flex flex-wrap items-center justify-center gap-1 pb-2">
+          {[1, 2, 3].map((value) => (
             <button
+              key={value}
               type="button"
-              onClick={() => setShowQuestion((prev) => !prev)}
-              className={`rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition ${
-                showQuestion
-                  ? 'text-black'
-                  : 'bg-gray-900  hover:bg-[#123086]'
+              onClick={() => toggleStrikes(value)}
+              disabled={step !== 'board'}
+              className={`rounded-full border-4 px-2 text-2xl font-black transition min-w-12 ${
+                step !== 'board' ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+              } ${
+                strikes === value
+                  ? 'bg-red-600 border-white text-white'
+                  : 'bg-gray-900 border-red-600 text-red-500 hover:bg-red-950'
               }`}
             >
-              Show Question
+              {'X'.repeat(value)}
             </button>
-          <div className="flex flex-wrap items-center justify-center gap-1 pb-2">
-
-        {[1, 2, 3].map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => toggleStrikes(value)}
-            className={`rounded-full border-4 px-2 text-2xl font-black cursor-pointer transition min-w-12${
-              strikes === value
-                ? 'bg-red-600 border-white text-white'
-                : 'bg-gray-900 border-red-600 text-red-500 hover:bg-red-950'
-            }`}
-          >
-            {'X'.repeat(value)}
-          </button>
-        ))}
-          </div>
+          ))}
+        </div>
       </div>
     </div>
   );
