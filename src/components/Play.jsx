@@ -334,16 +334,20 @@ function Play() {
           <button
             type="button"
             onClick={() => playSound(intenseSound)}
-            className="rounded-xl px-5 py-2 text-xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
+            aria-label="Play intense sound"
+            title="Intense"
+            className="rounded-xl px-5 py-2 text-2xl cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
           >
-            Intense
+            🔥
           </button>
           <button
             type="button"
             onClick={() => playSound(drumSound)}
-            className="rounded-xl px-5 py-2 text-xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
+            aria-label="Play drum sound"
+            title="Drum"
+            className="rounded-xl px-5 py-2 text-2xl cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
           >
-            Drum
+            🥁
           </button>
         </div>
 
