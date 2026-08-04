@@ -5,6 +5,7 @@ import yesSound from '../assets/sounds/yes.mp3';
 import noSound from '../assets/sounds/no.mp3';
 import intenseSound from '../assets/sounds/intense.mp3';
 import drumSound from '../assets/sounds/drum.mp3';
+import overSound from '../assets/sounds/over.mp3';
 
 const SLOT_COUNT = 8;
 
@@ -111,6 +112,12 @@ function Play() {
     const timer = setTimeout(() => setStrikes(0), 3000);
     return () => clearTimeout(timer);
   }, [strikes]);
+
+  useEffect(() => {
+    if (step === 'gameOver') {
+      playSound(overSound);
+    }
+  }, [step]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
