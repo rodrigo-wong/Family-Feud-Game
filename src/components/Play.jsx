@@ -9,6 +9,7 @@ function Play() {
   const [showQuestion, setShowQuestion] = useState(true);
   const [strikes, setStrikes] = useState(0);
   const [revealed, setRevealed] = useState(() => new Set());
+  const [awardedPoints, setAwardedPoints] = useState(null);
 
   const [game] = useState(() => {
     try {
@@ -25,10 +26,11 @@ function Play() {
     () => game[questionIndex]?.answers ?? [],
     [game, questionIndex]
   );
-  const questionPoints = currentAnswers.reduce(
+  const revealedPoints = currentAnswers.reduce(
     (sum, a, i) => (revealed.has(i) ? sum + (Number(a.points) || 0) : sum),
     0
   );
+  const questionPoints = awardedPoints ?? revealedPoints;
 
   const toggleStrikes = (value) => {
     setStrikes((prev) => (prev === value ? 0 : value));
@@ -46,6 +48,7 @@ function Play() {
     setShowQuestion(true);
     setStrikes(0);
     setRevealed(new Set());
+    setAwardedPoints(null);
   }, []);
 
   const advanceToNextQuestion = useCallback(() => {
@@ -58,10 +61,11 @@ function Play() {
 
   const assignPoints = (team) => {
     if (team === 1) {
-      setTeamOneScore((prev) => prev + questionPoints);
+      setTeamOneScore((prev) => prev + revealedPoints);
     } else {
-      setTeamTwoScore((prev) => prev + questionPoints);
+      setTeamTwoScore((prev) => prev + revealedPoints);
     }
+    setAwardedPoints(revealedPoints);
 
     const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
     if (hasUnrevealed) {
