@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import logo from '../assets/family-feud-logo.png';
 import yesSound from '../assets/sounds/yes.mp3';
 import noSound from '../assets/sounds/no.mp3';
@@ -173,6 +174,13 @@ function Play() {
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
+      <Link
+        to="/"
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
+      >
+        ← Home
+      </Link>
+
       <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
         <div
           className="relative w-full max-w-6xl border-4 border-yellow-400 px-20 py-10 sm:px-28 sm:py-16 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
