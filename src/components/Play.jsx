@@ -10,6 +10,8 @@ function Play() {
   const [strikes, setStrikes] = useState(0);
   const [revealed, setRevealed] = useState(() => new Set());
   const [awardedPoints, setAwardedPoints] = useState(null);
+  const [awardedTeam, setAwardedTeam] = useState(null);
+  const [lastStrikeClicked, setLastStrikeClicked] = useState(null);
 
   const [game] = useState(() => {
     try {
@@ -33,6 +35,7 @@ function Play() {
   const questionPoints = awardedPoints ?? revealedPoints;
 
   const toggleStrikes = (value) => {
+    setLastStrikeClicked(value);
     setStrikes((prev) => (prev === value ? 0 : value));
   };
 
@@ -49,6 +52,8 @@ function Play() {
     setStrikes(0);
     setRevealed(new Set());
     setAwardedPoints(null);
+    setAwardedTeam(null);
+    setLastStrikeClicked(null);
   }, []);
 
   const advanceToNextQuestion = useCallback(() => {
@@ -66,6 +71,7 @@ function Play() {
       setTeamTwoScore((prev) => prev + revealedPoints);
     }
     setAwardedPoints(revealedPoints);
+    setAwardedTeam(team);
 
     const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
     if (hasUnrevealed) {
@@ -75,34 +81,75 @@ function Play() {
     }
   };
 
+  const undoAward = useCallback(() => {
+    if (awardedTeam === 1) {
+      setTeamOneScore((prev) => prev - awardedPoints);
+    } else if (awardedTeam === 2) {
+      setTeamTwoScore((prev) => prev - awardedPoints);
+    }
+    setAwardedPoints(null);
+    setAwardedTeam(null);
+    setStep('assign');
+  }, [awardedTeam, awardedPoints]);
+
+  useEffect(() => {
+    if (strikes === 0) return;
+    const timer = setTimeout(() => setStrikes(0), 3000);
+    return () => clearTimeout(timer);
+  }, [strikes]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key !== 'ArrowRight' || game.length === 0) return;
+      if (game.length === 0) return;
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       e.preventDefault();
 
+      if (e.key === 'ArrowRight') {
+        if (showQuestion) {
+          setShowQuestion(false);
+          return;
+        }
+
+        if (step === 'board') {
+          setStep('assign');
+          return;
+        }
+
+        if (step === 'reveal') {
+          const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
+          if (nextIndex !== -1) {
+            setRevealed((prev) => new Set(prev).add(nextIndex));
+          } else {
+            advanceToNextQuestion();
+          }
+        }
+        return;
+      }
+
+      // ArrowLeft
       if (showQuestion) {
         setShowQuestion(false);
         return;
       }
 
       if (step === 'board') {
-        setStep('assign');
+        setShowQuestion(true);
         return;
       }
 
-      if (step === 'reveal') {
-        const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
-        if (nextIndex !== -1) {
-          setRevealed((prev) => new Set(prev).add(nextIndex));
-        } else {
-          advanceToNextQuestion();
-        }
+      if (step === 'assign') {
+        setStep('board');
+        return;
+      }
+
+      if (step === 'reveal' || step === 'gameOver') {
+        undoAward();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [game.length, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion]);
+  }, [game.length, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion, undoAward]);
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
@@ -176,18 +223,6 @@ function Play() {
                 })}
               </div>
 
-              {step === 'board' && strikes > 0 && (
-                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 rounded-[2.5rem] z-30">
-                  {Array.from({ length: strikes }).map((_, i) => (
-                    <span
-                      key={i}
-                      className="text-4xl sm:text-5xl font-black text-red-600 [-webkit-text-stroke:3px_white] drop-shadow-[0_0_20px_rgba(220,38,38,0.9)]"
-                    >
-                      X
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {showQuestion && (
@@ -237,30 +272,22 @@ function Play() {
 
         {game.length > 0 && (
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-2">
-              {game.map((q, i) => (
-                <button
-                  key={q.id ?? i}
-                  type="button"
-                  onClick={() => goToQuestion(i)}
-                  aria-label={`Go to question ${i + 1}`}
-                  className={`w-3 h-3 rounded-full cursor-pointer transition ${
-                    i === questionIndex ? 'bg-white' : 'bg-white/30 hover:bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
-
             <span className="text-white/60 text-sm">
               Question {questionIndex + 1} of {game.length}
             </span>
 
             {(showQuestion || step === 'board') && (
-              <span className="text-white/60 text-sm">Press → to continue</span>
+              <span className="text-white/60 text-sm">Press → to continue · ← to go back</span>
             )}
 
             {!showQuestion && step === 'reveal' && (
-              <span className="text-white/60 text-sm">Press → to reveal remaining answers</span>
+              <span className="text-white/60 text-sm">
+                Press → to reveal remaining answers · ← to undo
+              </span>
+            )}
+
+            {!showQuestion && step === 'gameOver' && (
+              <span className="text-white/60 text-sm">Press ← to undo</span>
             )}
           </div>
         )}
@@ -291,13 +318,23 @@ function Play() {
                 strikes === value
                   ? 'bg-red-600 border-white text-white'
                   : 'bg-gray-900 border-red-600 text-red-500 hover:bg-red-950'
-              }`}
+              } ${lastStrikeClicked === value ? 'animate-pulse' : ''}`}
             >
               {'X'.repeat(value)}
             </button>
           ))}
         </div>
       </div>
+
+      {step === 'board' && strikes > 0 && (
+        <div className="fixed inset-0 flex items-center justify-center gap-6 bg-black/60 z-50">
+          {Array.from({ length: strikes }).map((_, i) => (
+            <span key={i} className="text-[12rem] sm:text-[16rem] font-black text-red-600 leading-none">
+              X
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
