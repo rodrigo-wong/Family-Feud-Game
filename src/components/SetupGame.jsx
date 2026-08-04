@@ -12,7 +12,7 @@ const makeQuestion = () => ({
 function SetupGame() {
   const [questions, setQuestions] = useState([makeQuestion()]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [savedGame, setSavedGame] = useState(null);
+  const [justSaved, setJustSaved] = useState(false);
 
   const currentQuestion = questions[currentIndex];
 
@@ -93,8 +93,9 @@ function SetupGame() {
       }))
       .filter((q) => q.text.trim() && q.answers.length > 0);
 
-    setSavedGame(sorted);
     localStorage.setItem('familyFeudQuestions', JSON.stringify(sorted));
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
   };
 
   return (
@@ -215,37 +216,22 @@ function SetupGame() {
           + Add question
         </button>
 
-        <button
-          type="submit"
-          className="bg-gray-900 border-2 border-white rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-white/10"
-        >
-          Save
-        </button>
-      </form>
-
-      {savedGame && (
-        <div className="w-full max-w-2xl flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">Preview </h2>
-          {savedGame.map((q, qIndex) => (
-            <div
-              key={q.id}
-              className="bg-gray-900 border-2 border-white rounded-2xl p-4"
-            >
-              <p className="font-bold mb-2">
-                Q{qIndex + 1}. {q.text}
-              </p>
-              <ol className="flex flex-col gap-1">
-                {q.answers.map((a) => (
-                  <li key={a.id} className="flex justify-between">
-                    <span>{a.text}</span>
-                    <span className="text-white/70">{a.points}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          ))}
+        <div className="flex items-center gap-4">
+          <button
+            type="submit"
+            className="bg-gray-900 border-2 border-white rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-white/10"
+          >
+            Save
+          </button>
+          <Link
+            to="/answers"
+            className="bg-gray-900 border-2 border-white rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-white/10"
+          >
+            View Answers
+          </Link>
         </div>
-      )}
+        {justSaved && <p className="text-green-400 -mt-2">Saved!</p>}
+      </form>
 
       <Link to="/" className="text-white/70 hover:text-white underline">
         Back to Home
