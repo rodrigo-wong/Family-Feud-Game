@@ -296,13 +296,9 @@ function Play() {
         <button
           type="button"
           onClick={() => setShowQuestion((prev) => !prev)}
-          className={`rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition ${
-            showQuestion
-              ? 'bg-yellow-400 text-black'
-              : 'bg-gray-900 hover:bg-[#123086]'
-          }`}
+          className='rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]'
         >
-          Show Question
+          {showQuestion ? 'Hide Question' : 'Show Question'}
         </button>
 
         <div className="flex flex-wrap items-center justify-center gap-1 pb-2">
