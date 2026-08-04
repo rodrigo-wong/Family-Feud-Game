@@ -9,8 +9,18 @@ const makeQuestion = () => ({
   answers: [makeAnswer(), makeAnswer(), makeAnswer(), makeAnswer()],
 });
 
+const loadStoredQuestions = () => {
+  try {
+    const stored = localStorage.getItem('familyFeudQuestions');
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [makeQuestion()];
+  } catch {
+    return [makeQuestion()];
+  }
+};
+
 function SetupGame() {
-  const [questions, setQuestions] = useState([makeQuestion()]);
+  const [questions, setQuestions] = useState(loadStoredQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [justSaved, setJustSaved] = useState(false);
 
@@ -96,6 +106,13 @@ function SetupGame() {
     localStorage.setItem('familyFeudQuestions', JSON.stringify(sorted));
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const clearSavedGame = () => {
+    if (!window.confirm('Clear the saved game? This cannot be undone.')) return;
+    localStorage.removeItem('familyFeudQuestions');
+    setQuestions([makeQuestion()]);
+    setCurrentIndex(0);
   };
 
   return (
@@ -229,6 +246,13 @@ function SetupGame() {
           >
             View Answers
           </Link>
+          <button
+            type="button"
+            onClick={clearSavedGame}
+            className="bg-gray-900 border-2 border-red-500 text-red-400 rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-red-950"
+          >
+            Clear Saved Game
+          </button>
         </div>
         {justSaved && <p className="text-green-400 -mt-2">Saved!</p>}
       </form>

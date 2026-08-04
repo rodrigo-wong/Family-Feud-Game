@@ -1,9 +1,7 @@
-import  {Component} from 'react';
 import { Link } from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
 
-class Intro extends Component {
-    render() {
+function Intro() {
         return (
             <div className="relative flex flex-col items-center justify-between h-screen w-full overflow-hidden p-2">
                 {/* Logo section that scales down on smaller screens */}
@@ -32,7 +30,6 @@ class Intro extends Component {
                 </div>
             </div>
         );
-    }
 }
 
 export default Intro;
