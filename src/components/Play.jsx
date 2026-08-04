@@ -222,7 +222,7 @@ function Play() {
 
           <div className="relative">
             <div className="relative rounded-[2.5rem] bg-black/70 border-4 border-yellow-400/80 pt-8 pb-8 px-4 sm:px-6">
-              <div className="grid grid-cols-2 grid-rows-4">
+              <div className="grid grid-cols-2 grid-rows-4 grid-flow-col">
                 {Array.from({ length: SLOT_COUNT }).map((_, i) => {
                   const answer = currentAnswers[i];
                   const isRevealed = revealed.has(i);
