@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const SLOT_COUNT = 8;
 
 function Play() {
   const [teamOneScore, setTeamOneScore] = useState(0);
   const [teamTwoScore, setTeamTwoScore] = useState(0);
-  const [step, setStep] = useState('board'); // 'board' | 'assign' | 'gameOver'
+  const [step, setStep] = useState('board'); // 'board' | 'assign' | 'reveal' | 'gameOver'
   const [showQuestion, setShowQuestion] = useState(true);
   const [strikes, setStrikes] = useState(0);
   const [revealed, setRevealed] = useState(() => new Set());
@@ -21,7 +21,10 @@ function Play() {
   const [questionIndex, setQuestionIndex] = useState(0);
 
   const currentQuestion = game[questionIndex]?.text ?? '';
-  const currentAnswers = game[questionIndex]?.answers ?? [];
+  const currentAnswers = useMemo(
+    () => game[questionIndex]?.answers ?? [],
+    [game, questionIndex]
+  );
   const questionPoints = currentAnswers.reduce(
     (sum, a, i) => (revealed.has(i) ? sum + (Number(a.points) || 0) : sum),
     0
@@ -37,13 +40,21 @@ function Play() {
     setRevealed((prev) => new Set(prev).add(index));
   };
 
-  const goToQuestion = (index) => {
+  const goToQuestion = useCallback((index) => {
     setQuestionIndex(index);
     setStep('board');
     setShowQuestion(true);
     setStrikes(0);
     setRevealed(new Set());
-  };
+  }, []);
+
+  const advanceToNextQuestion = useCallback(() => {
+    if (questionIndex < game.length - 1) {
+      goToQuestion(questionIndex + 1);
+    } else {
+      setStep('gameOver');
+    }
+  }, [questionIndex, game.length, goToQuestion]);
 
   const assignPoints = (team) => {
     if (team === 1) {
@@ -52,10 +63,11 @@ function Play() {
       setTeamTwoScore((prev) => prev + questionPoints);
     }
 
-    if (questionIndex < game.length - 1) {
-      goToQuestion(questionIndex + 1);
+    const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
+    if (hasUnrevealed) {
+      setStep('reveal');
     } else {
-      setStep('gameOver');
+      advanceToNextQuestion();
     }
   };
 
@@ -63,16 +75,30 @@ function Play() {
     const handleKeyDown = (e) => {
       if (e.key !== 'ArrowRight' || game.length === 0) return;
       e.preventDefault();
+
       if (showQuestion) {
         setShowQuestion(false);
         return;
       }
-      setStep((prev) => (prev === 'board' ? 'assign' : prev));
+
+      if (step === 'board') {
+        setStep('assign');
+        return;
+      }
+
+      if (step === 'reveal') {
+        const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
+        if (nextIndex !== -1) {
+          setRevealed((prev) => new Set(prev).add(nextIndex));
+        } else {
+          advanceToNextQuestion();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [game.length, showQuestion]);
+  }, [game.length, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion]);
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
@@ -227,6 +253,10 @@ function Play() {
 
             {(showQuestion || step === 'board') && (
               <span className="text-white/60 text-sm">Press → to continue</span>
+            )}
+
+            {!showQuestion && step === 'reveal' && (
+              <span className="text-white/60 text-sm">Press → to reveal remaining answers</span>
             )}
           </div>
         )}
