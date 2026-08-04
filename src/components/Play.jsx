@@ -10,6 +10,7 @@ import introSound from '../assets/sounds/introduction.mp3';
 import winGif from '../assets/gif/win.gif';
 import { playSound } from '../utils/audio';
 import x from '../assets/x.png';
+import './Play.css';
 
 const SLOT_COUNT = 8;
 
@@ -202,7 +203,7 @@ function Play() {
 
       <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
         <div
-          className="relative w-full max-w-6xl border-4 border-yellow-400 px-20 py-10 sm:px-28 sm:py-16 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
+          className="ff-board relative border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
           style={{
             borderRadius: '40%',
             backgroundColor: '#050b24',
@@ -210,20 +211,20 @@ function Play() {
             backgroundSize: '22px 22px',
           }}
         >
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-36 h-14 rounded-xl bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] scale-[1.2]">
-            <span className="text-4xl font-extrabold tracking-wide">{questionPoints}</span>
+          <div className="ff-points-badge absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-xl bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] scale-[1.2]">
+            <span className="ff-display-font font-extrabold tracking-wide">{questionPoints}</span>
           </div>
 
-          <div className="absolute top-1/2 -left-6 sm:-left-10 -translate-y-1/2 z-20 flex items-center justify-center w-24 sm:w-28 h-16 rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
-            <span className="text-4xl font-extrabold">{teamOneScore}</span>
+          <div className="ff-score-badge ff-score-badge-left absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
+            <span className="ff-display-font font-extrabold">{teamOneScore}</span>
           </div>
 
-          <div className="absolute top-1/2 -right-6 sm:-right-10 -translate-y-1/2 z-20 flex items-center justify-center w-24 sm:w-28 h-16 rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
-            <span className="text-4xl font-extrabold">{teamTwoScore}</span>
+          <div className="ff-score-badge ff-score-badge-right absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
+            <span className="ff-display-font font-extrabold">{teamTwoScore}</span>
           </div>
 
           <div className="relative">
-            <div className="relative rounded-[2.5rem] bg-black/70 border-4 border-yellow-400/80 pt-8 pb-8 px-4 sm:px-6">
+            <div className="ff-panel relative bg-black/70 border-4 border-yellow-400/80">
               <div className="grid grid-cols-2 grid-rows-4 grid-flow-col">
                 {Array.from({ length: SLOT_COUNT }).map((_, i) => {
                   const answer = currentAnswers[i];
@@ -238,14 +239,14 @@ function Play() {
                         type="button"
                         onClick={() => revealAnswer(i)}
                         disabled={!answer || isRevealed || step !== 'board'}
-                        className={`relative w-full h-11 sm:h-14 [transform-style:preserve-3d] transition-transform duration-500 ease-in-out ${
+                        className={`ff-cell-btn relative w-full [transform-style:preserve-3d] transition-transform duration-500 ease-in-out ${
                           isRevealed ? '[transform:rotateX(180deg)]' : ''
                         } ${answer ? 'cursor-pointer' : 'cursor-default'}`}
                       >
                         <span className="absolute inset-0 rounded-sm flex items-center justify-center [backface-visibility:hidden] shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)] bg-[linear-gradient(to_bottom,#cfe9ff_0%,#4f8bf0_18%,#1a3fa0_55%,#0a1c57_100%)]">
                           {answer && (
                             <span
-                              className="flex items-center justify-center w-10 h-7 sm:w-14 sm:h-10 rounded-[50%]"
+                              className="ff-num-circle flex items-center justify-center rounded-[50%]"
                               style={{
                                 background:
                                   'radial-gradient(ellipse at 35% 25%, #7fbaff 0%, #3a7ce0 35%, #17408f 70%, #081c4d 100%)',
@@ -254,7 +255,7 @@ function Play() {
                               }}
                             >
                               <span
-                                className="font-extrabold text-lg sm:text-2xl text-white"
+                                className="ff-num-font font-extrabold text-white"
                                 style={{ textShadow: '0 2px 3px rgba(0,0,0,0.65)' }}
                               >
                                 {i + 1}
@@ -266,13 +267,13 @@ function Play() {
                         <span className="absolute inset-0 rounded-sm overflow-hidden flex gap-1 bg-black [backface-visibility:hidden] [transform:rotateX(180deg)] shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
                           {answer && (
                             <>
-                              <span className="flex-1 h-full flex items-center px-3 sm:px-4 bg-[linear-gradient(to_bottom,#3b5170_0%,#1b2740_55%,#0d1524_100%)]">
-                                <span className="font-extrabold text-sm sm:text-lg uppercase truncate text-white">
+                              <span className="ff-answer-pad flex-1 h-full flex items-center bg-[linear-gradient(to_bottom,#3b5170_0%,#1b2740_55%,#0d1524_100%)]">
+                                <span className="ff-answer-font font-extrabold uppercase truncate text-white">
                                   {answer.text}
                                 </span>
                               </span>
-                              <span className="w-14 sm:w-20 shrink-0 h-full flex items-center justify-center bg-[linear-gradient(to_bottom,#cfe9ff_0%,#4f8bf0_18%,#1a3fa0_55%,#0a1c57_100%)]">
-                                <span className="font-extrabold text-lg sm:text-2xl text-white">
+                              <span className="ff-answer-points shrink-0 h-full flex items-center justify-center bg-[linear-gradient(to_bottom,#cfe9ff_0%,#4f8bf0_18%,#1a3fa0_55%,#0a1c57_100%)]">
+                                <span className="ff-num-font font-extrabold text-white">
                                   {answer.points}
                                 </span>
                               </span>
@@ -288,36 +289,36 @@ function Play() {
             </div>
 
             {showLogo && (
-              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex items-center justify-center px-6 sm:px-10 z-40">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex items-center justify-center z-40">
                 <img src={logo} alt="Family Feud logo" className="max-h-full max-w-full object-contain" />
               </div>
             )}
 
             {!showLogo && showQuestion && (
-              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex items-center justify-center px-6 sm:px-10 z-40">
-                <p className="text-center text-white text-2xl sm:text-4xl font-bold">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex items-center justify-center z-40">
+                <p className="ff-display-font text-center text-white font-bold">
                   {currentQuestion || 'No question set yet.'}
                 </p>
               </div>
             )}
 
             {!showLogo && !showQuestion && step === 'assign' && (
-              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-6 px-6 sm:px-10 z-40">
-                <p className="text-center text-white text-xl sm:text-3xl font-bold">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-6 z-40">
+                <p className="ff-assign-font text-center text-white font-bold">
                   Award {questionPoints} points to:
                 </p>
                 <div className="flex gap-6">
                   <button
                     type="button"
                     onClick={() => assignPoints(1)}
-                    className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
+                    className="ff-assign-btn rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white cursor-pointer hover:brightness-110"
                   >
                     {teamNames.team1}
                   </button>
                   <button
                     type="button"
                     onClick={() => assignPoints(2)}
-                    className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
+                    className="ff-assign-btn rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white cursor-pointer hover:brightness-110"
                   >
                     {teamNames.team2}
                   </button>
@@ -326,13 +327,13 @@ function Play() {
             )}
 
             {!showLogo && !showQuestion && step === 'gameOver' && (
-              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 px-6 sm:px-10 z-40">
-                <p className="text-white text-2xl sm:text-4xl font-extrabold">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 z-40">
+                <p className="ff-display-font text-white font-extrabold">
                   {teamOneScore === teamTwoScore
                     ? "It's a tie!"
                     : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`}
                 </p>
-                <img src={winGif} alt="Winner celebration" className="max-h-40 sm:max-h-64 object-contain" />
+                <img src={winGif} alt="Winner celebration" className="ff-win-gif object-contain" />
               </div>
             )}
           </div>

@@ -1,0 +1,80 @@
+/* Board scales fluidly with viewport width; everything inside scales
+   proportionally via container query units (cqw) so the board and logo
+   keep their aspect ratio at any resolution. */
+
+.ff-board {
+  container-type: inline-size;
+  width: clamp(280px, 92vw, 1800px);
+  padding: clamp(2rem, 5.56cqw, 6.4rem) clamp(3.5rem, 9.72cqw, 11.2rem);
+}
+
+.ff-display-font {
+  font-size: clamp(1.125rem, 3.13cqw, 3.6rem);
+}
+
+.ff-points-badge {
+  top: clamp(-3.2rem, -2.78cqw, -1rem);
+  width: clamp(4.5rem, 12.5cqw, 14.4rem);
+  height: clamp(1.75rem, 4.86cqw, 5.6rem);
+}
+
+.ff-score-badge {
+  width: clamp(3.5rem, 9.72cqw, 11.2rem);
+  height: clamp(2rem, 5.56cqw, 6.4rem);
+}
+
+.ff-score-badge-left {
+  left: clamp(-4rem, -3.47cqw, -1.25rem);
+}
+
+.ff-score-badge-right {
+  right: clamp(-4rem, -3.47cqw, -1.25rem);
+}
+
+.ff-panel {
+  border-radius: clamp(1.25rem, 3.47cqw, 4rem);
+  padding: clamp(1rem, 2.78cqw, 3.2rem) clamp(0.75rem, 2.08cqw, 2.4rem);
+}
+
+.ff-cell-btn {
+  height: clamp(1.75rem, 4.86cqw, 5.6rem);
+}
+
+.ff-num-circle {
+  width: clamp(1.75rem, 4.86cqw, 5.6rem);
+  height: clamp(1.25rem, 3.47cqw, 4rem);
+}
+
+.ff-num-font {
+  font-size: clamp(0.75rem, 2.08cqw, 2.4rem);
+}
+
+.ff-answer-pad {
+  padding-inline: clamp(0.5rem, 1.39cqw, 1.6rem);
+}
+
+.ff-answer-font {
+  font-size: clamp(0.5625rem, 1.5625cqw, 1.8rem);
+}
+
+.ff-answer-points {
+  width: clamp(2.5rem, 6.94cqw, 8rem);
+}
+
+.ff-overlay {
+  border-radius: clamp(1.25rem, 3.47cqw, 4rem);
+  padding-inline: clamp(1.25rem, 3.47cqw, 4rem);
+}
+
+.ff-assign-font {
+  font-size: clamp(0.9375rem, 2.604cqw, 3rem);
+}
+
+.ff-assign-btn {
+  padding: clamp(0.375rem, 1.0417cqw, 1.2rem) clamp(0.75rem, 2.08cqw, 2.4rem);
+  font-size: clamp(0.75rem, 2.08cqw, 2.4rem);
+}
+
+.ff-win-gif {
+  max-height: clamp(8rem, 22.22cqw, 25.6rem);
+}
