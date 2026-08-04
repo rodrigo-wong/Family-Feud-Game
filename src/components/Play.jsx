@@ -6,6 +6,7 @@ import noSound from '../assets/sounds/no.mp3';
 import intenseSound from '../assets/sounds/intense.mp3';
 import drumSound from '../assets/sounds/drum.mp3';
 import overSound from '../assets/sounds/over.mp3';
+import winGif from '../assets/gif/win.gif';
 import { playSound } from '../utils/audio';
 
 const SLOT_COUNT = 8;
@@ -28,6 +29,18 @@ function Play() {
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
+    }
+  });
+  const [teamNames] = useState(() => {
+    try {
+      const stored = localStorage.getItem('familyFeudTeamNames');
+      const parsed = stored ? JSON.parse(stored) : null;
+      return {
+        team1: parsed?.team1 || 'Team 1',
+        team2: parsed?.team2 || 'Team 2',
+      };
+    } catch {
+      return { team1: 'Team 1', team2: 'Team 2' };
     }
   });
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -282,14 +295,14 @@ function Play() {
                     onClick={() => assignPoints(1)}
                     className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
                   >
-                    Team 1
+                    {teamNames.team1}
                   </button>
                   <button
                     type="button"
                     onClick={() => assignPoints(2)}
                     className="rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 px-6 py-3 text-xl sm:text-2xl font-extrabold text-white cursor-pointer hover:brightness-110"
                   >
-                    Team 2
+                    {teamNames.team2}
                   </button>
                 </div>
               </div>
@@ -297,12 +310,12 @@ function Play() {
 
             {!showLogo && !showQuestion && step === 'gameOver' && (
               <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 px-6 sm:px-10 z-40">
-                <p className="text-white text-2xl sm:text-4xl font-extrabold">Game Over!</p>
-                <p className="text-white text-lg sm:text-2xl font-bold">
+                <p className="text-white text-2xl sm:text-4xl font-extrabold">
                   {teamOneScore === teamTwoScore
                     ? "It's a tie!"
-                    : `Team ${teamOneScore > teamTwoScore ? 1 : 2} wins!`}
+                    : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`}
                 </p>
+                <img src={winGif} alt="Winner celebration" className="max-h-40 sm:max-h-64 object-contain" />
               </div>
             )}
           </div>
