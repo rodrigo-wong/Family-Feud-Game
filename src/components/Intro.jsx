@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
-import introSound from "../assets/sounds/over.mp3";
+import introSound from "../assets/sounds/introduction.mp3";
 import {useRef, useState} from "react";
 import { playSound } from '../utils/audio';
 
