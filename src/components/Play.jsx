@@ -241,9 +241,24 @@ function Play() {
                         } ${answer ? 'cursor-pointer' : 'cursor-default'}`}
                       >
                         <span className="absolute inset-0 rounded-sm flex items-center justify-center [backface-visibility:hidden] shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)] bg-[linear-gradient(to_bottom,#cfe9ff_0%,#4f8bf0_18%,#1a3fa0_55%,#0a1c57_100%)]">
-                          <span className="font-extrabold text-lg sm:text-xl">
-                            {answer ? i + 1 : ''}
-                          </span>
+                          {answer && (
+                            <span
+                              className="flex items-center justify-center w-10 h-7 sm:w-14 sm:h-10 rounded-[50%]"
+                              style={{
+                                background:
+                                  'radial-gradient(ellipse at 35% 25%, #7fbaff 0%, #3a7ce0 35%, #17408f 70%, #081c4d 100%)',
+                                boxShadow:
+                                  '0 3px 6px rgba(0,0,0,0.55), inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -2px 4px rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              <span
+                                className="font-extrabold text-lg sm:text-2xl text-white"
+                                style={{ textShadow: '0 2px 3px rgba(0,0,0,0.65)' }}
+                              >
+                                {i + 1}
+                              </span>
+                            </span>
+                          )}
                         </span>
 
                         <span className="absolute inset-0 rounded-sm overflow-hidden flex gap-1 bg-black [backface-visibility:hidden] [transform:rotateX(180deg)] shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
