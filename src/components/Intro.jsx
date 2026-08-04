@@ -37,6 +37,12 @@ function Intro() {
                     >
                         SETTINGS
                     </Link>
+                    <Link
+                        to="/instructions"
+                        className="block text-center text-2xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                        INSTRUCTIONS
+                    </Link>
                 </div>
                 }
             </div>

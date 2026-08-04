@@ -3,6 +3,7 @@ import Intro from "./components/Intro.jsx";
 import SetupGame from "./components/SetupGame.jsx";
 import Answers from "./components/Answers.jsx";
 import Play from "./components/Play.jsx";
+import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/setup-game" element={<SetupGame />} />
         <Route path="/answers" element={<Answers />} />
         <Route path="/play" element={<Play />} />
+        <Route path="/instructions" element={<Instructions />} />
       </Routes>
     </>
   )
