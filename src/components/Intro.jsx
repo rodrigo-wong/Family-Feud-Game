@@ -2,12 +2,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
 import introSound from "../assets/sounds/over.mp3";
 import {useState} from "react";
+import { playSound } from '../utils/audio';
 
 function Intro() {
         const navigate = useNavigate();
         const [show, setShow] = useState(true);
         const handlePlayGame = () => {
-            new Audio(introSound).play();
+            playSound(introSound);
             setShow(false)
             setTimeout(() => navigate('/play'), 12000);
         };

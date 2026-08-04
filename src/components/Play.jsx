@@ -6,12 +6,9 @@ import noSound from '../assets/sounds/no.mp3';
 import intenseSound from '../assets/sounds/intense.mp3';
 import drumSound from '../assets/sounds/drum.mp3';
 import overSound from '../assets/sounds/over.mp3';
+import { playSound } from '../utils/audio';
 
 const SLOT_COUNT = 8;
-
-const playSound = (src) => {
-  new Audio(src).play();
-};
 
 function Play() {
   const [teamOneScore, setTeamOneScore] = useState(0);

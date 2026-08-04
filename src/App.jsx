@@ -5,12 +5,14 @@ import Answers from "./components/Answers.jsx";
 import Play from "./components/Play.jsx";
 import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
+import VolumeControl from "./components/VolumeControl.jsx";
 
 function App() {
 
   return (
     <>
       <DotGridBackground />
+      <VolumeControl />
       <Routes>
         <Route path="/" element={<Intro />} />
         <Route path="/setup-game" element={<SetupGame />} />
