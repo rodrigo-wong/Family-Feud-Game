@@ -8,6 +8,7 @@ import drumSound from '../assets/sounds/drum.mp3';
 import overSound from '../assets/sounds/over.mp3';
 import winGif from '../assets/gif/win.gif';
 import { playSound } from '../utils/audio';
+import x from '../assets/x.png';
 
 const SLOT_COUNT = 8;
 
@@ -416,7 +417,7 @@ function Play() {
         <div className="fixed inset-0 flex items-center justify-center gap-6 bg-black/60 z-50">
           {Array.from({ length: strikes }).map((_, i) => (
             <span key={i} className="text-[12rem] sm:text-[16rem] font-black text-red-600 leading-none">
-              X
+              <img src={x} alt={i * "x"} />
             </span>
           ))}
         </div>
