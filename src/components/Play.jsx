@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import logo from '../assets/family-feud-logo.png';
+import yesSound from '../assets/sounds/yes.mp3';
+import noSound from '../assets/sounds/no.mp3';
+import intenseSound from '../assets/sounds/intense.mp3';
+import drumSound from '../assets/sounds/drum.mp3';
 
 const SLOT_COUNT = 8;
+
+const playSound = (src) => {
+  new Audio(src).play();
+};
 
 function Play() {
   const [teamOneScore, setTeamOneScore] = useState(0);
   const [teamTwoScore, setTeamTwoScore] = useState(0);
   const [step, setStep] = useState('board'); // 'board' | 'assign' | 'reveal' | 'gameOver'
-  const [showQuestion, setShowQuestion] = useState(true);
+  const [showLogo, setShowLogo] = useState(true);
+  const [showQuestion, setShowQuestion] = useState(false);
   const [strikes, setStrikes] = useState(0);
   const [revealed, setRevealed] = useState(() => new Set());
   const [awardedPoints, setAwardedPoints] = useState(null);
@@ -35,6 +45,7 @@ function Play() {
   const questionPoints = awardedPoints ?? revealedPoints;
 
   const toggleStrikes = (value) => {
+    playSound(noSound);
     setLastStrikeClicked(value);
     setStrikes((prev) => (prev === value ? 0 : value));
   };
@@ -42,13 +53,15 @@ function Play() {
   const revealAnswer = (index) => {
     if (step !== 'board') return;
     if (index >= currentAnswers.length) return;
+    playSound(yesSound);
     setRevealed((prev) => new Set(prev).add(index));
   };
 
   const goToQuestion = useCallback((index) => {
     setQuestionIndex(index);
     setStep('board');
-    setShowQuestion(true);
+    setShowLogo(true);
+    setShowQuestion(false);
     setStrikes(0);
     setRevealed(new Set());
     setAwardedPoints(null);
@@ -105,6 +118,12 @@ function Play() {
       e.preventDefault();
 
       if (e.key === 'ArrowRight') {
+        if (showLogo) {
+          setShowLogo(false);
+          setShowQuestion(true);
+          return;
+        }
+
         if (showQuestion) {
           setShowQuestion(false);
           return;
@@ -127,13 +146,8 @@ function Play() {
       }
 
       // ArrowLeft
-      if (showQuestion) {
-        setShowQuestion(false);
-        return;
-      }
-
-      if (step === 'board') {
-        setShowQuestion(true);
+      if (step === 'reveal' || step === 'gameOver') {
+        undoAward();
         return;
       }
 
@@ -142,14 +156,20 @@ function Play() {
         return;
       }
 
-      if (step === 'reveal' || step === 'gameOver') {
-        undoAward();
+      if (!showQuestion && !showLogo) {
+        setShowQuestion(true);
+        return;
+      }
+
+      if (showQuestion) {
+        setShowQuestion(false);
+        setShowLogo(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [game.length, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion, undoAward]);
+  }, [game.length, showLogo, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion, undoAward]);
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
@@ -225,7 +245,13 @@ function Play() {
 
             </div>
 
-            {showQuestion && (
+            {showLogo && (
+              <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex items-center justify-center px-6 sm:px-10 z-40">
+                <img src={logo} alt="Family Feud logo" className="max-h-full max-w-full object-contain" />
+              </div>
+            )}
+
+            {!showLogo && showQuestion && (
               <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex items-center justify-center px-6 sm:px-10 z-40">
                 <p className="text-center text-white text-2xl sm:text-4xl font-bold">
                   {currentQuestion || 'No question set yet.'}
@@ -233,7 +259,7 @@ function Play() {
               </div>
             )}
 
-            {!showQuestion && step === 'assign' && (
+            {!showLogo && !showQuestion && step === 'assign' && (
               <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-6 px-6 sm:px-10 z-40">
                 <p className="text-center text-white text-xl sm:text-3xl font-bold">
                   Award {questionPoints} points to:
@@ -257,7 +283,7 @@ function Play() {
               </div>
             )}
 
-            {!showQuestion && step === 'gameOver' && (
+            {!showLogo && !showQuestion && step === 'gameOver' && (
               <div className="absolute inset-0 rounded-[2.5rem] bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 px-6 sm:px-10 z-40">
                 <p className="text-white text-2xl sm:text-4xl font-extrabold">Game Over!</p>
                 <p className="text-white text-lg sm:text-2xl font-bold">
@@ -276,7 +302,7 @@ function Play() {
               Question {questionIndex + 1} of {game.length}
             </span>
 
-            {(showQuestion || step === 'board') && (
+            {(showLogo || showQuestion || step === 'board') && (
               <span className="text-white/60 text-sm">Press → to continue · ← to go back</span>
             )}
 
@@ -295,11 +321,31 @@ function Play() {
       <div className="flex flex-wrap items-center justify-center gap-8 pb-2">
         <button
           type="button"
-          onClick={() => setShowQuestion((prev) => !prev)}
+          onClick={() => {
+            setShowLogo(false);
+            setShowQuestion((prev) => !prev);
+          }}
           className='rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]'
         >
           {showQuestion ? 'Hide Question' : 'Show Question'}
         </button>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 pb-2">
+          <button
+            type="button"
+            onClick={() => playSound(intenseSound)}
+            className="rounded-xl px-5 py-2 text-xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
+          >
+            Intense
+          </button>
+          <button
+            type="button"
+            onClick={() => playSound(drumSound)}
+            className="rounded-xl px-5 py-2 text-xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
+          >
+            Drum
+          </button>
+        </div>
 
         <div className="flex flex-wrap items-center justify-center gap-1 pb-2">
           {[1, 2, 3].map((value) => (

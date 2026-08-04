@@ -1,10 +1,19 @@
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
+import introSound from "../assets/sounds/intro.mp3";
+import {useState} from "react";
 
 function Intro() {
+        const navigate = useNavigate();
+        const [show, setShow] = useState(true);
+        const handlePlayGame = () => {
+            new Audio(introSound).play();
+            setShow(false)
+            setTimeout(() => navigate('/play'), 7000);
+        };
+
         return (
             <div className="relative flex flex-col items-center justify-between h-screen w-full overflow-hidden p-2">
-                {/* Logo section that scales down on smaller screens */}
                 <div className="flex-1 flex items-center justify-center min-h-0">
                     <img
                         src={logo}
@@ -13,14 +22,15 @@ function Intro() {
                     />
                 </div>
 
-                {/* Buttons container fixed to the lower section without overflow */}
+                {show &&
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 shrink-0 pb-12">
-                    <Link
-                        to="/play"
+                    <button
+                        type="button"
+                        onClick={handlePlayGame}
                         className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
                     >
                         START GAME
-                    </Link>
+                    </button>
                     <Link
                         to="/setup-game"
                         className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
@@ -28,6 +38,7 @@ function Intro() {
                         SETTINGS
                     </Link>
                 </div>
+                }
             </div>
         );
 }
