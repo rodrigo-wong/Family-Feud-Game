@@ -119,6 +119,13 @@ function SetupGame() {
 
   return (
     <div className="relative flex flex-col items-center min-h-screen px-4 py-12 gap-8 text-white">
+      <Link
+        to="/"
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
+      >
+        ← Home
+      </Link>
+
       <h1 className="text-4xl font-bold">Setup Game</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center gap-6 w-full">
@@ -258,10 +265,6 @@ function SetupGame() {
         </div>
         {justSaved && <p className="text-green-400 -mt-2">Saved!</p>}
       </form>
-
-      <Link to="/" className="text-white/70 hover:text-white underline">
-        Back to Home
-      </Link>
     </div>
   );
 }

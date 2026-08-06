@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 function Answers() {
   const location = useLocation();
+  const navigate = useNavigate();
   const previewQuestions = location.state?.questions ?? null;
   const previewTitle = location.state?.title ?? null;
+  const backTo = previewQuestions ? '/select-game' : '/';
 
   const [game] = useState(() => {
     if (previewQuestions) return previewQuestions;
@@ -19,6 +21,14 @@ function Answers() {
 
   return (
     <div className="relative flex flex-col items-center min-h-screen px-4 py-12 gap-8 text-white">
+      <button
+        type="button"
+        onClick={() => navigate(backTo)}
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
+      >
+        ← Back
+      </button>
+
       <h1 className="text-4xl font-bold">
         {previewTitle ? `${previewTitle} — Review Answers` : 'Review Answers'}
       </h1>
@@ -74,21 +84,6 @@ function Answers() {
           ))}
         </div>
       )}
-
-      <div className="flex gap-4">
-        {previewQuestions ? (
-          <Link to="/select-game" className="text-white/70 hover:text-white underline">
-            Back to Select Game
-          </Link>
-        ) : (
-          <Link to="/setup-game" className="text-white/70 hover:text-white underline">
-            Edit Questions
-          </Link>
-        )}
-        <Link to="/" className="text-white/70 hover:text-white underline">
-          Back to Home
-        </Link>
-      </div>
     </div>
   );
 }

@@ -59,6 +59,13 @@ function SelectGame() {
 
   return (
     <div className="relative flex flex-col items-center min-h-screen px-4 py-12 gap-10 text-white">
+      <Link
+        to="/"
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
+      >
+        ← Home
+      </Link>
+
       <h1 className="text-4xl font-bold">Select a Game</h1>
 
       {customGame && (
@@ -90,10 +97,6 @@ function SelectGame() {
           ))}
         </div>
       </section>
-
-      <Link to="/" className="text-white/70 hover:text-white underline">
-        Back to Home
-      </Link>
     </div>
   );
 }

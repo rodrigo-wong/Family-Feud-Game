@@ -12,6 +12,13 @@ function Section({ title, children }) {
 function Instructions() {
   return (
     <div className="relative flex flex-col items-center min-h-screen px-4 py-12 gap-8 text-white">
+      <Link
+        to="/"
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
+      >
+        ← Home
+      </Link>
+
       <h1 className="text-4xl font-bold">How to Play</h1>
 
       <div className="w-full max-w-2xl flex flex-col gap-4">
@@ -117,12 +124,6 @@ function Instructions() {
             corner at any time during the game to return to the main screen.
           </p>
         </Section>
-      </div>
-
-      <div className="flex gap-4">
-        <Link to="/" className="text-white/70 hover:text-white underline">
-          Back to Home
-        </Link>
       </div>
     </div>
   );
