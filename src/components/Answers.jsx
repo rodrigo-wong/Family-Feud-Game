@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 function Answers() {
+  const location = useLocation();
+  const previewQuestions = location.state?.questions ?? null;
+  const previewTitle = location.state?.title ?? null;
+
   const [game] = useState(() => {
+    if (previewQuestions) return previewQuestions;
     try {
       const stored = localStorage.getItem('familyFeudQuestions');
       return stored ? JSON.parse(stored) : [];
@@ -10,10 +15,23 @@ function Answers() {
       return [];
     }
   });
+  const [revealed, setRevealed] = useState(false);
 
   return (
     <div className="relative flex flex-col items-center min-h-screen px-4 py-12 gap-8 text-white">
-      <h1 className="text-4xl font-bold">Answers</h1>
+      <h1 className="text-4xl font-bold">
+        {previewTitle ? `${previewTitle} — Review Answers` : 'Review Answers'}
+      </h1>
+
+      {game.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setRevealed((prev) => !prev)}
+          className="bg-gray-900 border-2 border-white rounded-2xl px-6 py-2 text-xl cursor-pointer hover:bg-white/10"
+        >
+          {revealed ? 'Hide Answers' : 'Reveal Answers'}
+        </button>
+      )}
 
       {game.length === 0 ? (
         <p className="text-white/70">
@@ -33,28 +51,40 @@ function Answers() {
               <p className="font-bold text-xl mb-2">
                 Q{qIndex + 1}. {q.text}
               </p>
-              <ol className="flex flex-col gap-1">
-                {q.answers.map((a, aIndex) => (
-                  <li
-                    key={a.id ?? aIndex}
-                    className="flex justify-between border-b border-white/10 py-1 last:border-0"
-                  >
-                    <span>
-                      {aIndex + 1}. {a.text}
-                    </span>
-                    <span className="text-white/70 font-bold">{a.points}</span>
-                  </li>
-                ))}
-              </ol>
+              {revealed ? (
+                <ol className="flex flex-col gap-1">
+                  {q.answers.map((a, aIndex) => (
+                    <li
+                      key={a.id ?? aIndex}
+                      className="flex justify-between border-b border-white/10 py-1 last:border-0"
+                    >
+                      <span>
+                        {aIndex + 1}. {a.text}
+                      </span>
+                      <span className="text-white/70 font-bold">{a.points}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-white/40 text-sm italic">
+                  {q.answers.length} answer{q.answers.length === 1 ? '' : 's'} hidden
+                </p>
+              )}
             </div>
           ))}
         </div>
       )}
 
       <div className="flex gap-4">
-        <Link to="/setup-game" className="text-white/70 hover:text-white underline">
-          Edit Questions
-        </Link>
+        {previewQuestions ? (
+          <Link to="/select-game" className="text-white/70 hover:text-white underline">
+            Back to Select Game
+          </Link>
+        ) : (
+          <Link to="/setup-game" className="text-white/70 hover:text-white underline">
+            Edit Questions
+          </Link>
+        )}
         <Link to="/" className="text-white/70 hover:text-white underline">
           Back to Home
         </Link>

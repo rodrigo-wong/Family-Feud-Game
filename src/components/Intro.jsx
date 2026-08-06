@@ -49,13 +49,13 @@ function Intro() {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 shrink-0 pb-12">
                     <Link
                         to="/select-game"
-                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                        className="block text-center text-2xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
                     >
                         SELECT GAME
                     </Link>
                     <Link
                         to="/setup-game"
-                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                        className="block text-center text-2xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
                     >
                         SETTINGS
                     </Link>

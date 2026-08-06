@@ -11,20 +11,36 @@ const loadCustomGame = () => {
   }
 };
 
-function GameCard({ name, questionCount, onClick, highlight }) {
+function GameCard({ name, questionCount, onPlay, onViewAnswers, highlight }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-left bg-gray-900 border-2 rounded-2xl p-4 cursor-pointer transition hover:bg-white/10 ${
+    <div
+      className={`bg-gray-900 border-2 rounded-2xl p-4 flex flex-col gap-3 ${
         highlight ? 'border-yellow-400' : 'border-white'
       }`}
     >
-      <p className="text-xl font-bold">{name}</p>
-      <p className="text-white/60 text-sm mt-1">
-        {questionCount} question{questionCount === 1 ? '' : 's'}
-      </p>
-    </button>
+      <div>
+        <p className="text-xl font-bold">{name}</p>
+        <p className="text-white/60 text-sm mt-1">
+          {questionCount} question{questionCount === 1 ? '' : 's'}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onPlay}
+          className="flex-1 rounded-xl border-2 border-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-white/10 transition"
+        >
+          Play
+        </button>
+        <button
+          type="button"
+          onClick={onViewAnswers}
+          className="flex-1 rounded-xl border-2 border-white/40 px-3 py-2 text-sm font-bold cursor-pointer hover:bg-white/10 transition"
+        >
+          View
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -32,9 +48,13 @@ function SelectGame() {
   const navigate = useNavigate();
   const customGame = loadCustomGame();
 
-  const selectGame = (questions) => {
+  const playGame = (questions) => {
     localStorage.setItem('familyFeudQuestions', JSON.stringify(questions));
     navigate('/', { state: { stage: 'teamNames' } });
+  };
+
+  const viewAnswers = (questions, title) => {
+    navigate('/answers', { state: { questions, title } });
   };
 
   return (
@@ -48,7 +68,8 @@ function SelectGame() {
             <GameCard
               name="My Custom Game"
               questionCount={customGame.length}
-              onClick={() => selectGame(customGame)}
+              onPlay={() => playGame(customGame)}
+              onViewAnswers={() => viewAnswers(customGame, 'My Custom Game')}
               highlight
             />
           </div>
@@ -63,7 +84,8 @@ function SelectGame() {
               key={game.id}
               name={game.name}
               questionCount={game.questions.length}
-              onClick={() => selectGame(game.questions)}
+              onPlay={() => playGame(game.questions)}
+              onViewAnswers={() => viewAnswers(game.questions, game.name)}
             />
           ))}
         </div>
