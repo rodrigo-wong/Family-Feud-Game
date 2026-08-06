@@ -11,7 +11,7 @@ const makeQuestion = () => ({
 
 const loadStoredQuestions = () => {
   try {
-    const stored = localStorage.getItem('familyFeudQuestions');
+    const stored = localStorage.getItem('familyFeudCustomGame');
     const parsed = stored ? JSON.parse(stored) : [];
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : [makeQuestion()];
   } catch {
@@ -103,6 +103,7 @@ function SetupGame() {
       }))
       .filter((q) => q.text.trim() && q.answers.length > 0);
 
+    localStorage.setItem('familyFeudCustomGame', JSON.stringify(sorted));
     localStorage.setItem('familyFeudQuestions', JSON.stringify(sorted));
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
@@ -110,6 +111,7 @@ function SetupGame() {
 
   const clearSavedGame = () => {
     if (!window.confirm('Clear the saved game? This cannot be undone.')) return;
+    localStorage.removeItem('familyFeudCustomGame');
     localStorage.removeItem('familyFeudQuestions');
     setQuestions([makeQuestion()]);
     setCurrentIndex(0);

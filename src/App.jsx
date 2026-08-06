@@ -1,5 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Intro from "./components/Intro.jsx";
+import SelectGame from "./components/SelectGame.jsx";
 import SetupGame from "./components/SetupGame.jsx";
 import Answers from "./components/Answers.jsx";
 import Play from "./components/Play.jsx";
@@ -8,13 +9,15 @@ import DotGridBackground from "./components/DotGridBackground.jsx";
 import VolumeControl from "./components/VolumeControl.jsx";
 
 function App() {
+  const location = useLocation();
 
   return (
     <>
       <DotGridBackground />
       <VolumeControl />
       <Routes>
-        <Route path="/" element={<Intro />} />
+        <Route path="/" element={<Intro key={location.key} />} />
+        <Route path="/select-game" element={<SelectGame />} />
         <Route path="/setup-game" element={<SetupGame />} />
         <Route path="/answers" element={<Answers />} />
         <Route path="/play" element={<Play />} />

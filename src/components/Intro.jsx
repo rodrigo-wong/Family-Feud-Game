@@ -1,24 +1,18 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
 import introSound from "../assets/sounds/introduction.mp3";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import { playSound } from '../utils/audio';
 
 function Intro() {
         const navigate = useNavigate();
-        const [stage, setStage] = useState('menu'); // 'menu' | 'teamNames'
+        const location = useLocation();
+        const [stage] = useState(
+            location.state?.stage === 'teamNames' ? 'teamNames' : 'menu'
+        ); // 'menu' | 'teamNames'
         const [teamOneName, setTeamOneName] = useState('Team 1');
         const [teamTwoName, setTeamTwoName] = useState('Team 2');
         const navigateTimeout = useRef(null);
-        const hasQuestions = (() => {
-            try {
-                const stored = localStorage.getItem('familyFeudQuestions');
-                const questions = stored ? JSON.parse(stored) : [];
-                return Array.isArray(questions) && questions.length > 0;
-            } catch {
-                return false;
-            }
-        })();
 
         const goToPlay = () => {
             localStorage.setItem('familyFeudTeamNames', JSON.stringify({
@@ -28,11 +22,13 @@ function Intro() {
             navigate('/play');
         };
 
-        const handlePlayGame = () => {
+        useEffect(() => {
+            if (stage !== 'teamNames') return;
             playSound(introSound);
-            setStage('teamNames');
             navigateTimeout.current = setTimeout(goToPlay, 12000);
-        };
+            return () => clearTimeout(navigateTimeout.current);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [stage]);
 
         const handleContinue = () => {
             clearTimeout(navigateTimeout.current);
@@ -51,14 +47,12 @@ function Intro() {
 
                 {stage === 'menu' &&
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 shrink-0 pb-12">
-                    <button
-                        type="button"
-                        onClick={handlePlayGame}
-                        disabled={!hasQuestions}
-                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-900 hover:bg-gray-800 cursor-pointer"
+                    <Link
+                        to="/select-game"
+                        className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
                     >
-                        START GAME
-                    </button>
+                        SELECT GAME
+                    </Link>
                     <Link
                         to="/setup-game"
                         className="block text-center text-3xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
