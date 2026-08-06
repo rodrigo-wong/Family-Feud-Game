@@ -126,7 +126,7 @@ function SetupGame() {
         ← Home
       </Link>
 
-      <h1 className="text-4xl font-bold">Setup Game</h1>
+      <h1 className="text-4xl font-bold">Custom Settings</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center gap-6 w-full">
         <div className="flex items-center gap-2 sm:gap-4 w-full max-w-6xl">
@@ -200,7 +200,7 @@ function SetupGame() {
             <button
               type="button"
               onClick={() => addAnswer(currentQuestion.id)}
-              className="self-start text-sm text-white/70 hover:text-white cursor-pointer"
+              className="self-start text-sm text-white/90 hover:text-white cursor-pointer border-2 border-white p-2 rounded-2xl"
             >
               + Add answer
             </button>
@@ -255,13 +255,15 @@ function SetupGame() {
           >
             View Answers
           </Link>
-          <button
-            type="button"
-            onClick={clearSavedGame}
-            className="bg-gray-900 border-2 border-red-500 text-red-400 rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-red-950"
-          >
-            Clear Saved Game
-          </button>
+          {localStorage.getItem('familyFeudCustomGame') && (
+           <button
+              type="button"
+              onClick={clearSavedGame}
+              className="bg-gray-900 border-2 border-red-500 text-red-400 rounded-2xl px-6 py-2 text-2xl cursor-pointer hover:bg-red-950"
+           >
+            Clear Game
+          </button>)}
+
         </div>
         {justSaved && <p className="text-green-400 -mt-2">Saved!</p>}
       </form>
