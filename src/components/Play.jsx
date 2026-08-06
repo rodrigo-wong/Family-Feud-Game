@@ -10,6 +10,7 @@ import introSound from '../assets/sounds/introduction.mp3';
 import winGif from '../assets/gif/win.gif';
 import { playSound } from '../utils/audio';
 import x from '../assets/x.png';
+import Fireworks from './Fireworks';
 import './Play.css';
 
 const SLOT_COUNT = 8;
@@ -194,6 +195,7 @@ function Play() {
 
   return (
     <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
+      <Fireworks active={step === 'gameOver'} />
       <Link
         to="/"
         className="fixed top-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 border-2 border-white px-4 py-2 text-lg font-bold text-white hover:bg-gray-800 transition-colors cursor-pointer"
@@ -296,13 +298,13 @@ function Play() {
             </div>
 
             {showLogo && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex items-center justify-center z-40">
+                <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                 <img src={logo} alt="Family Feud logo" className="max-h-full max-w-full object-contain" />
               </div>
             )}
 
             {!showLogo && showQuestion && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex items-center justify-center z-40">
+                <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                 <p className="ff-display-font text-center text-white font-bold">
                   {currentQuestion || 'No question set yet.'}
                 </p>
@@ -334,7 +336,7 @@ function Play() {
             )}
 
             {!showLogo && !showQuestion && step === 'gameOver' && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-4 z-40">
+                <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                 <p className="ff-display-font text-white font-extrabold">
                   {teamOneScore === teamTwoScore
                     ? "It's a tie!"
@@ -356,6 +358,12 @@ function Play() {
               <span className="text-white/60 text-sm">Press → to continue · ← to go back</span>
             )}
 
+            {!showQuestion && step === 'assign' && (
+              <span className="text-white/60 text-sm">
+                Press ← to go back or select a team to award points
+              </span>
+            )}
+
             {!showQuestion && step === 'reveal' && (
               <span className="text-white/60 text-sm">
                 Press → to reveal remaining answers · ← to undo
@@ -368,7 +376,7 @@ function Play() {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-8 pb-2">
+      <div className="relative z-50 flex flex-wrap items-center justify-center gap-8 pb-2">
         <button
           type="button"
           onClick={() => {
