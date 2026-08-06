@@ -37,7 +37,7 @@ function Answers() {
         <button
           type="button"
           onClick={() => setRevealed((prev) => !prev)}
-          className="bg-gray-900 border-2 border-white rounded-2xl px-6 py-2 text-xl cursor-pointer hover:bg-white/10"
+          className="bg-gray-900 border-2 border-yellow-400 rounded-2xl px-6 py-2 text-xl cursor-pointer hover:bg-white/10"
         >
           {revealed ? 'Hide Answers' : 'Reveal Answers'}
         </button>
@@ -56,7 +56,7 @@ function Answers() {
           {game.map((q, qIndex) => (
             <div
               key={q.id ?? qIndex}
-              className="bg-gray-900 border-2 border-white rounded-2xl p-4"
+              className="bg-gray-900 border-2 border-yellow-400 rounded-2xl p-4"
             >
               <p className="font-bold text-xl mb-2">
                 Q{qIndex + 1}. {q.text}

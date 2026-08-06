@@ -203,13 +203,20 @@ function Play() {
 
       <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
         <div
-          className="ff-board relative border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
-          style={{
-            borderRadius: '40%',
-            backgroundColor: '#050b24',
-            backgroundImage: 'radial-gradient(circle, #facc15 2.5px, transparent 2.5px)',
-            backgroundSize: '22px 22px',
-          }}
+            className="ff-board relative border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
+            style={{
+              borderRadius: '40%',
+              backgroundColor: '#050b24cc',
+              backgroundImage: `radial-gradient(
+                circle, 
+                #ffffff 0px, 
+                #facc15 1.5px, 
+                rgba(250, 204, 21, 0.4) 3.5px, 
+                rgba(250, 204, 21, 0.1) 6px, 
+                transparent 7px
+              )`,
+              backgroundSize: '25px 25px',
+            }}
         >
           <div className="ff-points-badge absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-xl bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] scale-[1.2]">
             <span className="ff-display-font font-extrabold tracking-wide">{questionPoints}</span>
@@ -224,7 +231,7 @@ function Play() {
           </div>
 
           <div className="relative">
-            <div className="ff-panel relative bg-black/70 border-4 border-yellow-400/80">
+            <div className="ff-panel relative bg-black/70 border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]">
               <div className="grid grid-cols-2 grid-rows-4 grid-flow-col">
                 {Array.from({ length: SLOT_COUNT }).map((_, i) => {
                   const answer = currentAnswers[i];
@@ -289,13 +296,13 @@ function Play() {
             </div>
 
             {showLogo && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex items-center justify-center z-40">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex items-center justify-center z-40">
                 <img src={logo} alt="Family Feud logo" className="max-h-full max-w-full object-contain" />
               </div>
             )}
 
             {!showLogo && showQuestion && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex items-center justify-center z-40">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex items-center justify-center z-40">
                 <p className="ff-display-font text-center text-white font-bold">
                   {currentQuestion || 'No question set yet.'}
                 </p>
@@ -303,7 +310,7 @@ function Play() {
             )}
 
             {!showLogo && !showQuestion && step === 'assign' && (
-              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-white flex flex-col items-center justify-center gap-6 z-40">
+              <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                 <p className="ff-assign-font text-center text-white font-bold">
                   Award {questionPoints} points to:
                 </p>
