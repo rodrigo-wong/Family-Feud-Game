@@ -4,18 +4,19 @@ const COLORS = ['#facc15', '#f87171', '#60a5fa', '#4ade80', '#f472b6', '#ffffff'
 const GRAVITY = 0.035;
 const FADE_STEP = 0.012;
 const HOLD_FRAMES = 18;
+const DURATION_MS = 6000;
 
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
 
 function createBurst(x, y) {
-  const count = Math.floor(randomRange(30, 50));
+  const count = Math.floor(randomRange(50, 80));
   const color = COLORS[Math.floor(Math.random() * COLORS.length)];
   const particles = [];
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count + randomRange(-0.2, 0.2);
-    const speed = randomRange(1.2, 3.5);
+    const speed = randomRange(2, 5.5);
     particles.push({
       x,
       y,
@@ -43,6 +44,7 @@ function Fireworks({ active }) {
     let particles = [];
     let lastLaunch = 0;
     let nextLaunchDelay = 0;
+    let startTime = null;
     let rafId;
 
     const resize = () => {
@@ -59,10 +61,13 @@ function Fireworks({ active }) {
     };
 
     const tick = (time) => {
-      if (time - lastLaunch > nextLaunchDelay) {
+      if (startTime === null) startTime = time;
+      const elapsed = time - startTime;
+
+      if (elapsed < DURATION_MS && time - lastLaunch > nextLaunchDelay) {
         launchFirework();
         lastLaunch = time;
-        nextLaunchDelay = randomRange(80, 120);
+        nextLaunchDelay = randomRange(120, 160);
       }
 
       ctx.clearRect(0, 0, width, height);
@@ -83,6 +88,8 @@ function Fireworks({ active }) {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+
+      if (elapsed >= DURATION_MS && particles.length === 0) return;
 
       rafId = requestAnimationFrame(tick);
     };
