@@ -22,23 +22,45 @@ function Instructions() {
       <h1 className="text-4xl font-bold">How to Play</h1>
 
       <div className="w-full max-w-2xl flex flex-col gap-4">
-        <Section title="1. Set up your questions">
+        <Section title="1. Pick a game">
           <p>
-            Go to <span className="font-bold">Settings</span> and add your questions,
-            answers, and point values before you start. Your game is saved automatically
-            so you can come back to it later.
+            From the home screen, click <span className="font-bold">SELECT GAME</span>.
+            You&apos;ll see your custom game (if you&apos;ve saved one) at the top and a
+            library of default games below. Each game shows a{' '}
+            <span className="font-bold">Play</span> and a{' '}
+            <span className="font-bold">View</span> button.
           </p>
         </Section>
 
-        <Section title="2. Start the game">
+        <Section title="2. (Optional) Build your own game">
           <p>
-            From the home screen, click <span className="font-bold">START GAME</span>.
-            The intro sound plays and, after a 7 second countdown, the game board
-            appears.
+            Click <span className="font-bold">CUSTOM</span> from the home screen to write
+            your own questions, answers, and point values. Click{' '}
+            <span className="font-bold">Save</span> to store it &mdash; it&apos;ll then
+            appear in the &quot;Your Custom Game&quot; section on the Select Game screen
+            and become the active game.
           </p>
         </Section>
 
-        <Section title="3. Reveal the logo &amp; question">
+        <Section title="3. Review answers before playing">
+          <p>
+            Click <span className="font-bold">View</span> on any game to open its Review
+            Answers page. Answers start hidden; click{' '}
+            <span className="font-bold">Reveal Answers</span> to show them all, or{' '}
+            <span className="font-bold">Hide Answers</span> to hide them again.
+          </p>
+        </Section>
+
+        <Section title="4. Start the game">
+          <p>
+            Click <span className="font-bold">Play</span> on the game you want. Enter
+            each team&apos;s name and click <span className="font-bold">Continue</span>{' '}
+            (or wait about 12 seconds for it to continue automatically) to jump to the
+            game board.
+          </p>
+        </Section>
+
+        <Section title="5. Reveal the logo &amp; question">
           <p>
             The board starts covered by the Family Feud logo. Use the{' '}
             <span className="font-bold">Show Question</span> button (or press the{' '}
@@ -47,7 +69,7 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="4. Reveal answers">
+        <Section title="6. Reveal answers">
           <p>
             When a team gives a correct answer, click that answer&apos;s tile on the
             board to flip it over and reveal it. This plays a &quot;yes&quot; sound
@@ -55,7 +77,7 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="5. Strikes">
+        <Section title="7. Strikes">
           <p>
             When a team gives a wrong answer, click the{' '}
             <span className="font-bold">X</span>, <span className="font-bold">XX</span>,
@@ -66,14 +88,14 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="6. Soundboard">
+        <Section title="8. Soundboard">
           <p>
             Use the 🔥 and 🥁 buttons any time to play optional &quot;intense&quot; and
             &quot;drum roll&quot; sound effects to build suspense.
           </p>
         </Section>
 
-        <Section title="7. Award points">
+        <Section title="9. Award points">
           <p>
             Once a team has control of the board, press{' '}
             <span className="font-bold">→</span> to move to the award screen and click{' '}
@@ -83,7 +105,7 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="8. Reveal remaining answers">
+        <Section title="10. Reveal remaining answers">
           <p>
             If any answers are still hidden after points are awarded, the game moves to
             a reveal step. Press <span className="font-bold">→</span> to flip over the
@@ -92,7 +114,7 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="9. Undo &amp; navigate back">
+        <Section title="11. Undo &amp; navigate back">
           <p>
             Press <span className="font-bold">←</span> at almost any point to step back
             &mdash; undo an awarded point, return to the board, or hide the question
@@ -100,7 +122,7 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="10. Game over">
+        <Section title="12. Game over">
           <p>
             After the last question, the winner is announced based on final scores.
             Press <span className="font-bold">←</span> to undo the last award if needed.
@@ -118,10 +140,13 @@ function Instructions() {
           </p>
         </Section>
 
-        <Section title="Getting home">
+        <Section title="Getting around">
           <p>
-            Click the <span className="font-bold">← Home</span> button in the top-left
-            corner at any time during the game to return to the main screen.
+            Every screen has a button in the top-left corner to take you back. On most
+            pages it reads <span className="font-bold">← Home</span> and returns to the
+            main screen. On the Review Answers page it reads{' '}
+            <span className="font-bold">← Back</span> and returns you to the Select Game
+            screen (or Home, if you opened it another way).
           </p>
         </Section>
       </div>
