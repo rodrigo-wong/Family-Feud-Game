@@ -14,7 +14,7 @@ export default function QRCode() {
 
         const handleUserJoined = (data) => {
             console.log('User joined payload:', data);
-
+            console.log(roomId)
             if (data?.role === 'host') {
                 let questions;
                 try {
