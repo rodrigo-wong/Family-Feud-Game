@@ -9,6 +9,7 @@ export default function QRCode() {
     const navigate = useNavigate();
     const roomId = location.state?.roomId;
     const url = `${import.meta.env.VITE_FRONTEND_URL}/host?roomId=${roomId}`;
+    console.log(roomId)
     useEffect(() => {
         if (!roomId) return;
 
