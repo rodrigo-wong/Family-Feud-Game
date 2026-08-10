@@ -8,12 +8,13 @@ import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
 import HostPlay from "./components/HostPlay.jsx";
 import WaitingRoom from "./components/WaitingRoom.jsx";
+import { ServerStatusProvider } from "./utils/ServerStatusContext.jsx";
 
 function App() {
   const location = useLocation();
 
   return (
-    <>
+    <ServerStatusProvider>
       <DotGridBackground />
       <Routes>
         <Route path="/" element={<Intro key={location.key} />} />
@@ -25,7 +26,7 @@ function App() {
         <Route path="/instructions" element={<Instructions />} />
           <Route path="/waiting-room" element={<WaitingRoom />} />
       </Routes>
-    </>
+    </ServerStatusProvider>
   )
 }
 

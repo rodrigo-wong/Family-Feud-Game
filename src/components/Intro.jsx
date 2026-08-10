@@ -1,11 +1,13 @@
 import {Link} from 'react-router-dom';
 import logo from "../assets/family-feud-logo.png";
 import VolumeControl from "./VolumeControl.jsx";
+import ServerStatus from "./ServerStatus.jsx";
 
 function Intro() {
     return (
         <div>
             <VolumeControl/>
+            <ServerStatus/>
 
             <div className="relative flex flex-col items-center justify-between h-screen w-full overflow-hidden p-2">
                 <div className="flex-1 flex items-center justify-center min-h-0">
