@@ -1,4 +1,4 @@
-import {useState, useMemo, useEffect, useCallback} from 'react';
+import {useState, useMemo, useEffect, useCallback, useRef} from 'react';
 import logo from '../assets/family-feud-logo.png';
 import winGif from '../assets/gif/win.gif';
 import x from '../assets/x.png';
@@ -10,6 +10,7 @@ import { useSearchParams } from 'react-router-dom';
 const socket = io('http://localhost:4000');
 
 const SLOT_COUNT = 8;
+const TEAM_NAMES_DEBOUNCE_MS = 2000;
 
 function Play() {
     // FIX: Destructure the array returned by useSearchParams
@@ -34,8 +35,8 @@ function Play() {
     const [teamOneScore, setTeamOneScore] = useState(0);
     const [teamTwoScore, setTeamTwoScore] = useState(0);
 
-    // Step sequence per question: 'logo' -> 'question' -> 'board' -> 'assign'
-    const [step, setStep] = useState('logo');
+    // Step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> ('reveal') -> ...
+    const [step, setStep] = useState('teamNames');
     const [strikes, setStrikes] = useState(0);
     const [revealed, setRevealed] = useState(() => new Set());
     const [questionIndex, setQuestionIndex] = useState(0);
@@ -49,7 +50,7 @@ function Play() {
         }
     });
 
-    const [teamNames] = useState(() => {
+    const [teamNames, setTeamNames] = useState(() => {
         try {
             const stored = localStorage.getItem('familyFeudTeamNames');
             const parsed = stored ? JSON.parse(stored) : null;
@@ -61,6 +62,56 @@ function Play() {
             return { team1: 'Team 1', team2: 'Team 2' };
         }
     });
+    const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
+    const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
+
+    // Picks up team name edits made on the display view (Play.jsx) and mirrors them here,
+    // including the still-in-progress draft inputs on the teamNames step.
+    useEffect(() => {
+        if (!roomId) return;
+
+        const handleReceiveAction = ({action}) => {
+            if (action?.type !== 'TEAM_NAMES_UPDATE') return;
+            const nextTeamNames = action.payload?.teamNames;
+            if (!nextTeamNames) return;
+
+            setTeamNames(nextTeamNames);
+            setTeamOneNameInput(nextTeamNames.team1);
+            setTeamTwoNameInput(nextTeamNames.team2);
+        };
+
+        socket.on('receive_action', handleReceiveAction);
+
+        return () => {
+            socket.off('receive_action', handleReceiveAction);
+        };
+    }, [roomId]);
+
+    // Tracks whether the pending draft-input change was typed here (vs. arriving from the
+    // socket), so we only broadcast edits made on this view and never echo back a synced one.
+    const localTeamNamesEditRef = useRef(false);
+
+    const handleTeamNameInputChange = (key, value) => {
+        localTeamNamesEditRef.current = true;
+        if (key === 'team1') setTeamOneNameInput(value);
+        else setTeamTwoNameInput(value);
+    };
+
+    // Broadcasts the in-progress draft to the display view as the host types,
+    // so Play.jsx can show a live preview before "Continue" is clicked.
+    useEffect(() => {
+        if (!roomId || !localTeamNamesEditRef.current) return;
+
+        const timer = setTimeout(() => {
+            localTeamNamesEditRef.current = false;
+            emitAction({
+                type: 'TEAM_NAMES_UPDATE',
+                payload: {teamNames: {team1: teamOneNameInput, team2: teamTwoNameInput}},
+            });
+        }, TEAM_NAMES_DEBOUNCE_MS);
+
+        return () => clearTimeout(timer);
+    }, [roomId, teamOneNameInput, teamTwoNameInput, emitAction]);
 
     const isGameOver = questionIndex >= game.length && game.length > 0;
     const currentQuestion = game[questionIndex]?.text ?? '';
@@ -86,9 +137,26 @@ function Play() {
                 strikes,
                 teamOneScore,
                 teamTwoScore,
+                teamNames,
             },
         });
-    }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, emitAction]);
+    }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, emitAction]);
+
+    // Plays the intro music on the display whenever the team-names section is entered
+    useEffect(() => {
+        if (!roomId || step !== 'teamNames') return;
+        emitAction({type: 'PLAY_SOUND', payload: {sound: 'intro'}});
+    }, [roomId, step, emitAction]);
+
+    const handleSetTeamNames = () => {
+        const nextTeamNames = {
+            team1: teamOneNameInput.trim() || 'Team 1',
+            team2: teamTwoNameInput.trim() || 'Team 2',
+        };
+        localStorage.setItem('familyFeudTeamNames', JSON.stringify(nextTeamNames));
+        setTeamNames(nextTeamNames);
+        setStep('logo');
+    };
 
     const toggleAnswer = (index) => {
         if (!currentAnswers[index]) return;
@@ -176,6 +244,8 @@ function Play() {
                 setQuestionIndex((prev) => prev - 1);
                 resetQuestionState();
                 setStep('assign');
+            } else {
+                setStep('teamNames');
             }
         }
     };
@@ -185,6 +255,41 @@ function Play() {
         setStrikes(count);
         setTimeout(() => setStrikes(0), 2000);
     };
+
+    if (step === 'teamNames') {
+        return (
+            <div className="relative flex flex-col items-center justify-center h-screen w-full overflow-hidden p-4 text-white">
+                <img src={logo} alt="Family Feud logo" className="max-h-64 max-w-full object-contain mb-8" />
+                <div className="flex flex-col items-center gap-4 w-full max-w-md">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                        <input
+                            type="text"
+                            value={teamOneNameInput}
+                            onChange={(e) => handleTeamNameInputChange('team1', e.target.value)}
+                            placeholder="Team 1"
+                            maxLength={20}
+                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                        />
+                        <input
+                            type="text"
+                            value={teamTwoNameInput}
+                            onChange={(e) => handleTeamNameInputChange('team2', e.target.value)}
+                            placeholder="Team 2"
+                            maxLength={20}
+                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleSetTeamNames}
+                        className="block text-center text-3xl font-bold bg-yellow-600 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                        CONTINUE
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
@@ -340,7 +445,6 @@ function Play() {
                     <button
                         type="button"
                         onClick={handlePrev}
-                        disabled={questionIndex === 0 && step === 'logo'}
                         className="rounded-xl px-4 py-2 font-bold bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
                     >
                         ← Previous

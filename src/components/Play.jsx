@@ -1,7 +1,8 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 import {io} from 'socket.io-client';
 import logo from '../assets/family-feud-logo.png';
+import introSound from '../assets/sounds/introduction.mp3';
 import yesSound from '../assets/sounds/yes.mp3';
 import noSound from '../assets/sounds/no.mp3';
 import intenseSound from '../assets/sounds/intense.mp3';
@@ -17,8 +18,10 @@ import VolumeControl from "./VolumeControl.jsx";
 const socket = io('http://localhost:4000');
 
 const SLOT_COUNT = 8;
+const TEAM_NAMES_DEBOUNCE_MS = 2000;
 
 const SOUND_MAP = {
+    intro: introSound,
     yes: yesSound,
     no: noSound,
     over: overSound,
@@ -32,11 +35,12 @@ function Play() {
 
     const [teamOneScore, setTeamOneScore] = useState(0);
     const [teamTwoScore, setTeamTwoScore] = useState(0);
-    // Mirrors HostPlay's step sequence: 'logo' -> 'question' -> 'board' -> 'assign' -> 'gameOver'
-    const [step, setStep] = useState('logo');
+    // Mirrors HostPlay's step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> 'gameOver'
+    const [step, setStep] = useState('teamNames');
     const [strikes, setStrikes] = useState(0);
     const [revealed, setRevealed] = useState(() => new Set());
     const [questionIndex, setQuestionIndex] = useState(0);
+    const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
 
     const [game] = useState(() => {
         try {
@@ -44,18 +48,6 @@ function Play() {
             return stored ? JSON.parse(stored) : [];
         } catch {
             return [];
-        }
-    });
-    const [teamNames] = useState(() => {
-        try {
-            const stored = localStorage.getItem('familyFeudTeamNames');
-            const parsed = stored ? JSON.parse(stored) : null;
-            return {
-                team1: parsed?.team1 || 'Team 1',
-                team2: parsed?.team2 || 'Team 2',
-            };
-        } catch {
-            return {team1: 'Team 1', team2: 'Team 2'};
         }
     });
 
@@ -68,6 +60,11 @@ function Play() {
         (sum, a, i) => (revealed.has(i) ? sum + (Number(a.points) || 0) : sum),
         0
     );
+
+    const emitAction = useCallback((action) => {
+        if (!roomId) return;
+        socket.emit('send_action', {channel: roomId, action});
+    }, [roomId]);
 
     useEffect(() => {
         if (!roomId) return;
@@ -85,6 +82,7 @@ function Play() {
                     strikes: nextStrikes,
                     teamOneScore: nextTeamOneScore,
                     teamTwoScore: nextTeamTwoScore,
+                    teamNames: nextTeamNames,
                 } = action.payload;
 
                 setStep(nextStep);
@@ -93,6 +91,10 @@ function Play() {
                 setStrikes(nextStrikes);
                 setTeamOneScore(nextTeamOneScore);
                 setTeamTwoScore(nextTeamTwoScore);
+                if (nextTeamNames) setTeamNames(nextTeamNames);
+            } else if (action.type === 'TEAM_NAMES_UPDATE') {
+                const nextTeamNames = action.payload?.teamNames;
+                if (nextTeamNames) setTeamNames(nextTeamNames);
             } else if (action.type === 'PLAY_SOUND') {
                 const sound = SOUND_MAP[action.payload?.sound];
                 if (sound) playSound(sound);
@@ -105,6 +107,26 @@ function Play() {
             socket.off('receive_action', handleReceiveAction);
         };
     }, [roomId]);
+
+    // Tracks whether the pending teamNames change was typed here (vs. arriving from the
+    // socket), so we only broadcast edits made on this view and never echo back a synced one.
+    const localTeamNamesEditRef = useRef(false);
+
+    const handleTeamNameChange = (key, value) => {
+        localTeamNamesEditRef.current = true;
+        setTeamNames((prev) => ({...prev, [key]: value}));
+    };
+
+    useEffect(() => {
+        if (!roomId || !localTeamNamesEditRef.current) return;
+
+        const timer = setTimeout(() => {
+            localTeamNamesEditRef.current = false;
+            emitAction({type: 'TEAM_NAMES_UPDATE', payload: {teamNames}});
+        }, TEAM_NAMES_DEBOUNCE_MS);
+
+        return () => clearTimeout(timer);
+    }, [roomId, teamNames, emitAction]);
 
     return (
         <div>
@@ -223,6 +245,30 @@ function Play() {
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <img src={logo} alt="Family Feud logo"
                                          className="max-h-full max-w-full object-contain"/>
+                                </div>
+                            )}
+
+                            {step === 'teamNames' && (
+                                <div
+                                    className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md px-4">
+                                        <input
+                                            type="text"
+                                            value={teamNames.team1}
+                                            onChange={(e) => handleTeamNameChange('team1', e.target.value)}
+                                            placeholder="Team 1"
+                                            maxLength={20}
+                                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={teamNames.team2}
+                                            onChange={(e) => handleTeamNameChange('team2', e.target.value)}
+                                            placeholder="Team 2"
+                                            maxLength={20}
+                                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                                        />
+                                    </div>
                                 </div>
                             )}
 
