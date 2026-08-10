@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import gameData from '../data/data.json';
+import {generateRoomId} from "../utils/room.js";
 
 const loadCustomGame = () => {
   try {
@@ -50,7 +51,7 @@ function SelectGame() {
 
   const playGame = (questions) => {
     localStorage.setItem('familyFeudQuestions', JSON.stringify(questions));
-    navigate('/', { state: { stage: 'teamNames' } });
+    navigate('/waiting-room', { state: { roomId: generateRoomId()} });
   };
 
   const viewAnswers = (questions, title) => {
