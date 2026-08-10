@@ -2,6 +2,7 @@
 
 @theme {
   --animate-dot-dim: dot-dim 6s ease-in-out infinite;
+  --animate-strike-flash: strike-flash 0.6s ease-in-out infinite;
 }
 
 @keyframes dot-dim {
@@ -11,5 +12,15 @@
   }
   50% {
     opacity: var(--peak, 0.5);
+  }
+}
+
+@keyframes strike-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }

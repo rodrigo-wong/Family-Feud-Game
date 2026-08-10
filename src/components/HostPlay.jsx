@@ -61,6 +61,7 @@ function Play() {
     // Step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> ('reveal') -> ...
     const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'teamNames');
     const [strikes, setStrikes] = useState(() => readStoredHostState(roomId)?.strikes ?? 0);
+    const [lastStrikeClicked, setLastStrikeClicked] = useState(null);
     const [revealed, setRevealed] = useState(() => new Set(readStoredHostState(roomId)?.revealed ?? []));
     const [questionIndex, setQuestionIndex] = useState(() => readStoredHostState(roomId)?.questionIndex ?? 0);
 
@@ -275,6 +276,7 @@ function Play() {
     const resetQuestionState = () => {
         setRevealed(new Set());
         setStrikes(0);
+        setLastStrikeClicked(null);
     };
 
     // Records the team/amount from the most recent award so Previous can undo it if the
@@ -385,6 +387,7 @@ function Play() {
     const handleStrike = (count) => {
         emitAction({type: 'PLAY_SOUND', payload: {sound: 'no'}});
         setStrikes(count);
+        setLastStrikeClicked(count);
         setTimeout(() => setStrikes(0), 2000);
     };
 
@@ -644,7 +647,9 @@ function Play() {
                             key={val}
                             type="button"
                             onClick={() => handleStrike(val)}
-                            className="rounded-full border-2 border-red-600 px-3 py-1 font-black text-red-500 bg-gray-900 hover:bg-red-950 transition cursor-pointer"
+                            className={`rounded-full border-2 border-red-600 px-3 py-1 font-black text-red-500 bg-gray-900 hover:bg-red-950 transition cursor-pointer ${
+                                lastStrikeClicked === val ? 'animate-strike-flash motion-reduce:animate-none' : ''
+                            }`}
                         >
                             {'X'.repeat(val)}
                         </button>
