@@ -1,5 +1,6 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {useEffect, useMemo, useState} from 'react';
+import {Link, useLocation} from 'react-router-dom';
+import {io} from 'socket.io-client';
 import logo from '../assets/family-feud-logo.png';
 import yesSound from '../assets/sounds/yes.mp3';
 import noSound from '../assets/sounds/no.mp3';
@@ -13,19 +14,29 @@ import Fireworks from './Fireworks';
 import './Play.css';
 import VolumeControl from "./VolumeControl.jsx";
 
+const socket = io('http://localhost:4000');
+
 const SLOT_COUNT = 8;
 
+const SOUND_MAP = {
+    yes: yesSound,
+    no: noSound,
+    over: overSound,
+    intense: intenseSound,
+    drum: drumSound,
+};
+
 function Play() {
+    const location = useLocation();
+    const roomId = location.state?.roomId;
+
     const [teamOneScore, setTeamOneScore] = useState(0);
     const [teamTwoScore, setTeamTwoScore] = useState(0);
-    const [step, setStep] = useState('board'); // 'board' | 'assign' | 'reveal' | 'gameOver'
-    const [showLogo, setShowLogo] = useState(true);
-    const [showQuestion, setShowQuestion] = useState(false);
+    // Mirrors HostPlay's step sequence: 'logo' -> 'question' -> 'board' -> 'assign' -> 'gameOver'
+    const [step, setStep] = useState('logo');
     const [strikes, setStrikes] = useState(0);
     const [revealed, setRevealed] = useState(() => new Set());
-    const [awardedPoints, setAwardedPoints] = useState(null);
-    const [awardedTeam, setAwardedTeam] = useState(null);
-    const [lastStrikeClicked, setLastStrikeClicked] = useState(null);
+    const [questionIndex, setQuestionIndex] = useState(0);
 
     const [game] = useState(() => {
         try {
@@ -47,156 +58,57 @@ function Play() {
             return {team1: 'Team 1', team2: 'Team 2'};
         }
     });
-    const [questionIndex, setQuestionIndex] = useState(0);
 
     const currentQuestion = game[questionIndex]?.text ?? '';
     const currentAnswers = useMemo(
         () => game[questionIndex]?.answers ?? [],
         [game, questionIndex]
     );
-    const revealedPoints = currentAnswers.reduce(
+    const boardPoints = currentAnswers.reduce(
         (sum, a, i) => (revealed.has(i) ? sum + (Number(a.points) || 0) : sum),
         0
     );
-    const questionPoints = awardedPoints ?? revealedPoints;
-
-    const toggleStrikes = (value) => {
-        playSound(noSound);
-        setLastStrikeClicked(value);
-        setStrikes((prev) => (prev === value ? 0 : value));
-    };
-
-    const revealAnswer = (index) => {
-        if (step !== 'board') return;
-        if (index >= currentAnswers.length) return;
-        playSound(yesSound);
-        setRevealed((prev) => new Set(prev).add(index));
-    };
-
-    const goToQuestion = useCallback((index) => {
-        setQuestionIndex(index);
-        setStep('board');
-        setShowLogo(true);
-        setShowQuestion(false);
-        setStrikes(0);
-        setRevealed(new Set());
-        setAwardedPoints(null);
-        setAwardedTeam(null);
-        setLastStrikeClicked(null);
-    }, []);
-
-    const advanceToNextQuestion = useCallback(() => {
-        if (questionIndex < game.length - 1) {
-            goToQuestion(questionIndex + 1);
-        } else {
-            setStep('gameOver');
-        }
-    }, [questionIndex, game.length, goToQuestion]);
-
-    const assignPoints = (team) => {
-        if (team === 1) {
-            setTeamOneScore((prev) => prev + revealedPoints);
-        } else {
-            setTeamTwoScore((prev) => prev + revealedPoints);
-        }
-        setAwardedPoints(revealedPoints);
-        setAwardedTeam(team);
-
-        const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
-        if (hasUnrevealed) {
-            setStep('reveal');
-        } else {
-            advanceToNextQuestion();
-        }
-    };
-
-    const undoAward = useCallback(() => {
-        if (awardedTeam === 1) {
-            setTeamOneScore((prev) => prev - awardedPoints);
-        } else if (awardedTeam === 2) {
-            setTeamTwoScore((prev) => prev - awardedPoints);
-        }
-        setAwardedPoints(null);
-        setAwardedTeam(null);
-        setStep('assign');
-    }, [awardedTeam, awardedPoints]);
 
     useEffect(() => {
-        if (strikes === 0) return;
-        const timer = setTimeout(() => setStrikes(0), 3000);
-        return () => clearTimeout(timer);
-    }, [strikes]);
+        if (!roomId) return;
 
-    useEffect(() => {
-        if (step === 'gameOver') {
-            playSound(overSound);
-        }
-    }, [step]);
+        socket.emit('join_channel', {roomId, role: 'display'});
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (game.length === 0) return;
-            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-            e.preventDefault();
+        const handleReceiveAction = ({action}) => {
+            if (!action) return;
 
-            if (e.key === 'ArrowRight') {
-                if (showLogo) {
-                    setShowLogo(false);
-                    setShowQuestion(true);
-                    return;
-                }
+            if (action.type === 'STATE_UPDATE') {
+                const {
+                    step: nextStep,
+                    questionIndex: nextQuestionIndex,
+                    revealed: nextRevealed,
+                    strikes: nextStrikes,
+                    teamOneScore: nextTeamOneScore,
+                    teamTwoScore: nextTeamTwoScore,
+                } = action.payload;
 
-                if (showQuestion) {
-                    setShowQuestion(false);
-                    return;
-                }
-
-                if (step === 'board') {
-                    setStep('assign');
-                    return;
-                }
-
-                if (step === 'reveal') {
-                    const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
-                    if (nextIndex !== -1) {
-                        setRevealed((prev) => new Set(prev).add(nextIndex));
-                    } else {
-                        advanceToNextQuestion();
-                    }
-                }
-                return;
-            }
-
-            // ArrowLeft
-            if (step === 'reveal' || step === 'gameOver') {
-                undoAward();
-                return;
-            }
-
-            if (step === 'assign') {
-                setStep('board');
-                return;
-            }
-
-            if (!showQuestion && !showLogo) {
-                setShowQuestion(true);
-                return;
-            }
-
-            if (showQuestion) {
-                setShowQuestion(false);
-                setShowLogo(true);
+                setStep(nextStep);
+                setQuestionIndex(nextQuestionIndex);
+                setRevealed(new Set(nextRevealed));
+                setStrikes(nextStrikes);
+                setTeamOneScore(nextTeamOneScore);
+                setTeamTwoScore(nextTeamTwoScore);
+            } else if (action.type === 'PLAY_SOUND') {
+                const sound = SOUND_MAP[action.payload?.sound];
+                if (sound) playSound(sound);
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [game.length, showLogo, showQuestion, step, currentAnswers, revealed, advanceToNextQuestion, undoAward]);
+        socket.on('receive_action', handleReceiveAction);
+
+        return () => {
+            socket.off('receive_action', handleReceiveAction);
+        };
+    }, [roomId]);
 
     return (
         <div>
             <VolumeControl/>
-
 
             <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
                 <Fireworks active={step === 'gameOver'}/>
@@ -214,11 +126,11 @@ function Play() {
                             borderRadius: '40%',
                             backgroundColor: '#050b24cc',
                             backgroundImage: `radial-gradient(
-                circle, 
-                #ffffff 0px, 
-                #facc15 1.5px, 
-                rgba(250, 204, 21, 0.4) 3.5px, 
-                rgba(250, 204, 21, 0.1) 6px, 
+                circle,
+                #ffffff 0px,
+                #facc15 1.5px,
+                rgba(250, 204, 21, 0.4) 3.5px,
+                rgba(250, 204, 21, 0.1) 6px,
                 transparent 7px
               )`,
                             backgroundSize: '25px 25px',
@@ -226,7 +138,7 @@ function Play() {
                     >
                         <div
                             className="ff-points-badge absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-xl bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] scale-[1.2]">
-                            <span className="ff-display-font font-extrabold tracking-wide">{questionPoints}</span>
+                            <span className="ff-display-font font-extrabold tracking-wide">{boardPoints}</span>
                         </div>
 
                         <div
@@ -252,13 +164,10 @@ function Play() {
                                                 key={i}
                                                 className="m-0.5 rounded-md border-4 border-black bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 p-1 [perspective:1000px]"
                                             >
-                                                <button
-                                                    type="button"
-                                                    onClick={() => revealAnswer(i)}
-                                                    disabled={!answer || isRevealed || step !== 'board'}
+                                                <div
                                                     className={`ff-cell-btn relative w-full [transform-style:preserve-3d] transition-transform duration-500 ease-in-out ${
                                                         isRevealed ? '[transform:rotateX(180deg)]' : ''
-                                                    } ${answer ? 'cursor-pointer' : 'cursor-default'}`}
+                                                    }`}
                                                 >
                         <span
                             className="absolute inset-0 rounded-sm flex items-center justify-center [backface-visibility:hidden] shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)] bg-[linear-gradient(to_bottom,#cfe9ff_0%,#4f8bf0_18%,#1a3fa0_55%,#0a1c57_100%)]">
@@ -301,7 +210,7 @@ function Play() {
                               </>
                           )}
                         </span>
-                                                </button>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -309,7 +218,7 @@ function Play() {
 
                             </div>
 
-                            {showLogo && (
+                            {step === 'logo' && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <img src={logo} alt="Family Feud logo"
@@ -317,7 +226,7 @@ function Play() {
                                 </div>
                             )}
 
-                            {!showLogo && showQuestion && (
+                            {step === 'question' && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <p className="ff-display-font text-center text-white font-bold">
@@ -326,32 +235,26 @@ function Play() {
                                 </div>
                             )}
 
-                            {!showLogo && !showQuestion && step === 'assign' && (
+                            {step === 'assign' && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <p className="ff-assign-font text-center text-white font-bold">
-                                        Award {questionPoints} points to:
+                                        Award {boardPoints} points to:
                                     </p>
                                     <div className="flex gap-6">
-                                        <button
-                                            type="button"
-                                            onClick={() => assignPoints(1)}
-                                            className="ff-assign-btn rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white cursor-pointer hover:brightness-110"
-                                        >
+                                        <span
+                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white">
                                             {teamNames.team1}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => assignPoints(2)}
-                                            className="ff-assign-btn rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white cursor-pointer hover:brightness-110"
-                                        >
+                                        </span>
+                                        <span
+                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white">
                                             {teamNames.team2}
-                                        </button>
+                                        </span>
                                     </div>
                                 </div>
                             )}
 
-                            {!showLogo && !showQuestion && step === 'gameOver' && (
+                            {step === 'gameOver' && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <p className="ff-display-font text-white font-extrabold">
@@ -370,84 +273,11 @@ function Play() {
             <span className="text-white/60 text-sm">
               Question {questionIndex + 1} of {game.length}
             </span>
-
-                            {(showLogo || showQuestion || step === 'board') && (
-                                <span className="text-white/60 text-sm">Press → to continue · ← to go back</span>
-                            )}
-
-                            {!showQuestion && step === 'assign' && (
-                                <span className="text-white/60 text-sm">
-                Press ← to go back or select a team to award points
-              </span>
-                            )}
-
-                            {!showQuestion && step === 'reveal' && (
-                                <span className="text-white/60 text-sm">
-                Press → to reveal remaining answers · ← to undo
-              </span>
-                            )}
-
-                            {!showQuestion && step === 'gameOver' && (
-                                <span className="text-white/60 text-sm">Press ← to undo</span>
-                            )}
                         </div>
                     )}
                 </div>
-                <div className="relative z-50 flex flex-wrap items-center justify-center gap-8 pb-2">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setShowLogo(false);
-                            setShowQuestion((prev) => !prev);
-                        }}
-                        className='rounded-xl px-5 py-2 text-3xl font-bold cursor-pointer transition bg-gray-900 hover:bg-[#123086]'
-                    >
-                        {showQuestion ? 'Hide Question' : 'Show Question'}
-                    </button>
 
-                    <div className="flex flex-wrap items-center justify-center gap-3 pb-2">
-                        <button
-                            type="button"
-                            onClick={() => playSound(intenseSound)}
-                            aria-label="Play intense sound"
-                            title="Intense"
-                            className="rounded-xl px-5 py-2 text-2xl cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
-                        >
-                            🔥
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => playSound(drumSound)}
-                            aria-label="Play drum sound"
-                            title="Drum"
-                            className="rounded-xl px-5 py-2 text-2xl cursor-pointer transition bg-gray-900 hover:bg-[#123086]"
-                        >
-                            🥁
-                        </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-1 pb-2">
-                        {[1, 2, 3].map((value) => (
-                            <button
-                                key={value}
-                                type="button"
-                                onClick={() => toggleStrikes(value)}
-                                disabled={step !== 'board'}
-                                className={`rounded-full border-4 px-2 text-2xl font-black transition min-w-12 ${
-                                    step !== 'board' ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
-                                } ${
-                                    strikes === value
-                                        ? 'bg-red-600 border-white text-white'
-                                        : 'bg-gray-900 border-red-600 text-red-500 hover:bg-red-950'
-                                } ${lastStrikeClicked === value ? 'animate-pulse' : ''}`}
-                            >
-                                {'X'.repeat(value)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {step === 'board' && strikes > 0 && (
+                {strikes > 0 && (
                     <div className="fixed inset-0 flex items-center justify-center gap-6 bg-black/60 z-50">
                         {Array.from({length: strikes}).map((_, i) => (
                             <span key={i} className="text-[12rem] sm:text-[16rem] font-black text-red-600 leading-none">

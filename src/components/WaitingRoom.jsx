@@ -1,12 +1,33 @@
 import { QRCodeSVG } from 'qrcode.react';
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
+import {io} from "socket.io-client";
+import {useEffect} from "react";
 
-
+const socket = io('http://localhost:4000');
 export default function QRCode() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const roomId = location.state?.roomId;
+    const url = `https://127.0.0.1:5173/host?roomId=${roomId}`;
+    useEffect(() => {
+        if (!roomId) return;
 
-    const url = `https://127.0.0.1:4000/host?room=${location.state.roomId}&role=host`;
+        const handleUserJoined = (data) => {
+            console.log('User joined payload:', data);
 
+            // Redirect if the joining user is a host
+            if (data?.role === 'host') {
+                navigate('/play', { state: { roomId } });
+            }
+        };
+
+        socket.on('user_joined', handleUserJoined);
+        socket.emit('join_channel', {roomId: roomId});
+
+        return () => {
+            socket.off('user_joined', handleUserJoined);
+        };
+    }, [roomId, navigate]);
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center p-4">
             <div

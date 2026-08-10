@@ -1,19 +1,36 @@
-import { useState, useMemo } from 'react';
+import {useState, useMemo, useEffect, useCallback} from 'react';
 import logo from '../assets/family-feud-logo.png';
-import yesSound from '../assets/sounds/yes.mp3';
-import noSound from '../assets/sounds/no.mp3';
-import intenseSound from '../assets/sounds/intense.mp3';
-import drumSound from '../assets/sounds/drum.mp3';
-import overSound from '../assets/sounds/over.mp3';
 import winGif from '../assets/gif/win.gif';
-import { playSound } from '../utils/audio';
 import x from '../assets/x.png';
 import Fireworks from './Fireworks';
 import './Play.css';
+import {io} from "socket.io-client";
+import { useSearchParams } from 'react-router-dom';
+
+const socket = io('http://localhost:4000');
 
 const SLOT_COUNT = 8;
 
 function Play() {
+    // FIX: Destructure the array returned by useSearchParams
+    const [searchParams] = useSearchParams();
+    const roomId = searchParams.get('roomId');
+
+    useEffect(() => {
+        if (!roomId) return;
+
+        socket.emit('join_channel', {roomId: roomId, role: 'host'});
+
+    }, [roomId]); // Room ID won't change, so this listener stays active continuously
+
+    // Broadcasts a one-off action (e.g. a sound cue) to the display view.
+    // Persistent state changes are instead broadcast by the STATE_UPDATE effect below,
+    // so the display self-heals even if an individual action event is dropped.
+    const emitAction = useCallback((action) => {
+        if (!roomId) return;
+        socket.emit('send_action', {channel: roomId, action});
+    }, [roomId]);
+
     const [teamOneScore, setTeamOneScore] = useState(0);
     const [teamTwoScore, setTeamTwoScore] = useState(0);
 
@@ -56,6 +73,23 @@ function Play() {
         );
     }, [currentAnswers, revealed]);
 
+    // Broadcasts the full game state to the display view any time it changes,
+    // so Play.jsx can mirror it without duplicating the host's step logic.
+    useEffect(() => {
+        if (!roomId) return;
+        emitAction({
+            type: 'STATE_UPDATE',
+            payload: {
+                step,
+                questionIndex,
+                revealed: Array.from(revealed),
+                strikes,
+                teamOneScore,
+                teamTwoScore,
+            },
+        });
+    }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, emitAction]);
+
     const toggleAnswer = (index) => {
         if (!currentAnswers[index]) return;
         setRevealed((prev) => {
@@ -63,7 +97,7 @@ function Play() {
             if (next.has(index)) {
                 next.delete(index);
             } else {
-                playSound(yesSound);
+                emitAction({type: 'PLAY_SOUND', payload: {sound: 'yes'}});
                 next.add(index);
             }
             return next;
@@ -101,7 +135,7 @@ function Play() {
             } else {
                 setQuestionIndex(game.length);
                 setStep('gameOver');
-                playSound(overSound);
+                emitAction({type: 'PLAY_SOUND', payload: {sound: 'over'}});
             }
         }
     };
@@ -130,7 +164,7 @@ function Play() {
     };
 
     const handleStrike = (count) => {
-        playSound(noSound);
+        emitAction({type: 'PLAY_SOUND', payload: {sound: 'no'}});
         setStrikes(count);
         setTimeout(() => setStrikes(0), 2000);
     };
@@ -308,7 +342,7 @@ function Play() {
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={() => playSound(intenseSound)}
+                        onClick={() => emitAction({type: 'PLAY_SOUND', payload: {sound: 'intense'}})}
                         className="rounded-xl px-3 py-2 text-xl bg-gray-800 hover:bg-gray-700 cursor-pointer"
                         title="Intense Sound"
                     >
@@ -316,7 +350,7 @@ function Play() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => playSound(drumSound)}
+                        onClick={() => emitAction({type: 'PLAY_SOUND', payload: {sound: 'drum'}})}
                         className="rounded-xl px-3 py-2 text-xl bg-gray-800 hover:bg-gray-700 cursor-pointer"
                         title="Drumroll"
                     >
