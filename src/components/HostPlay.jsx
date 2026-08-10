@@ -3,6 +3,7 @@ import logo from '../assets/family-feud-logo.png';
 import winGif from '../assets/gif/win.gif';
 import x from '../assets/x.png';
 import Fireworks from './Fireworks';
+import FitText from './FitText';
 import './Play.css';
 import {io} from "socket.io-client";
 import { useSearchParams } from 'react-router-dom';
@@ -341,12 +342,13 @@ function Play() {
                                                                     : 'bg-[linear-gradient(to_bottom,#1e293b_0%,#0f172a_100%)]'
                                                             }`}
                                                         >
-                                                            <span
-                                                                className={`ff-answer-font font-extrabold uppercase truncate transition-colors duration-300 ${
-                                                                    isRevealed ? 'text-white' : 'text-gray-400'
-                                                                }`}
-                                                            >
-                                                                {answer.text}
+                                                            <span className="w-full h-6">
+                                                                <FitText
+                                                                    text={answer.text.toUpperCase()}
+                                                                    className={`font-extrabold transition-colors duration-300 ${
+                                                                        isRevealed ? 'text-white' : 'text-gray-400'
+                                                                    }`}
+                                                                />
                                                             </span>
                                                         </span>
 
@@ -404,16 +406,18 @@ function Play() {
                                     <button
                                         type="button"
                                         onClick={() => awardPointsToTeam(1)}
-                                        className="rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
+                                        className="flex items-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
                                     >
-                                        {teamNames.team1} (+{currentBoardPoints})
+                                        <span className="w-32 h-6"><FitText text={teamNames.team1} className="font-extrabold" /></span>
+                                        <span>(+{currentBoardPoints})</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => awardPointsToTeam(2)}
-                                        className="rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
+                                        className="flex items-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
                                     >
-                                        {teamNames.team2} (+{currentBoardPoints})
+                                        <span className="w-32 h-6"><FitText text={teamNames.team2} className="font-extrabold" /></span>
+                                        <span>(+{currentBoardPoints})</span>
                                     </button>
                                 </div>
                             </div>
@@ -421,11 +425,16 @@ function Play() {
 
                         {isGameOver && (
                             <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
-                                <p className="ff-display-font text-white font-extrabold">
-                                    {teamOneScore === teamTwoScore
-                                        ? "It's a tie!"
-                                        : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`}
-                                </p>
+                                <div className="w-full max-w-xl h-12">
+                                    <FitText
+                                        text={
+                                            teamOneScore === teamTwoScore
+                                                ? "It's a tie!"
+                                                : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`
+                                        }
+                                        className="font-extrabold text-white"
+                                    />
+                                </div>
                                 <img src={winGif} alt="Winner celebration" className="ff-win-gif object-contain" />
                             </div>
                         )}

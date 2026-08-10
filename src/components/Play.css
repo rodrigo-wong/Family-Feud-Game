@@ -53,10 +53,6 @@
   padding-inline: clamp(0.5rem, 1.39cqw, 1.6rem);
 }
 
-.ff-answer-font {
-  font-size: clamp(0.5625rem, 1.5625cqw, 1.8rem);
-}
-
 .ff-answer-points {
   width: clamp(2.5rem, 6.94cqw, 8rem);
 }

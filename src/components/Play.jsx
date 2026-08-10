@@ -14,6 +14,7 @@ import x from '../assets/x.png';
 import Fireworks from './Fireworks';
 import './Play.css';
 import VolumeControl from "./VolumeControl.jsx";
+import FitText from './FitText';
 
 const socket = io(import.meta.env.VITE_BACKEND_URL);
 
@@ -178,12 +179,14 @@ function Play() {
                         </div>
 
                         <div
-                            className="ff-score-badge ff-score-badge-left absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
+                            className="ff-score-badge ff-score-badge-left absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center gap-1 rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2] px-1">
+                            <span className="w-full h-4"><FitText text={teamNames.team1} className="font-bold" /></span>
                             <span className="ff-display-font font-extrabold">{teamOneScore}</span>
                         </div>
 
                         <div
-                            className="ff-score-badge ff-score-badge-right absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2]">
+                            className="ff-score-badge ff-score-badge-right absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center gap-1 rounded-md bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 border-4 border-yellow-400 scale-[1.2] px-1">
+                            <span className="w-full h-4"><FitText text={teamNames.team2} className="font-bold" /></span>
                             <span className="ff-display-font font-extrabold">{teamTwoScore}</span>
                         </div>
 
@@ -233,8 +236,8 @@ function Play() {
                               <>
                               <span
                                   className="ff-answer-pad flex-1 h-full flex items-center bg-[linear-gradient(to_bottom,#3b5170_0%,#1b2740_55%,#0d1524_100%)]">
-                                <span className="ff-answer-font font-extrabold uppercase truncate text-white">
-                                  {answer.text}
+                                <span className="w-full h-full">
+                                  <FitText text={answer.text.toUpperCase()} className="font-extrabold text-white" />
                                 </span>
                               </span>
                                   <span
@@ -303,12 +306,16 @@ function Play() {
                                     </p>
                                     <div className="flex gap-6">
                                         <span
-                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white">
-                                            {teamNames.team1}
+                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 text-white">
+                                            <span className="w-full h-10">
+                                                <FitText text={teamNames.team1} className="font-extrabold" />
+                                            </span>
                                         </span>
                                         <span
-                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 font-extrabold text-white">
-                                            {teamNames.team2}
+                                            className="ff-assign-btn flex items-center justify-center rounded-xl border-4 border-yellow-400 bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900 text-white">
+                                            <span className="w-full h-10">
+                                                <FitText text={teamNames.team2} className="font-extrabold" />
+                                            </span>
                                         </span>
                                     </div>
                                 </div>
@@ -317,11 +324,16 @@ function Play() {
                             {step === 'gameOver' && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
-                                    <p className="ff-display-font text-white font-extrabold">
-                                        {teamOneScore === teamTwoScore
-                                            ? "It's a tie!"
-                                            : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`}
-                                    </p>
+                                    <div className="w-full max-w-2xl h-16">
+                                        <FitText
+                                            text={
+                                                teamOneScore === teamTwoScore
+                                                    ? "It's a tie!"
+                                                    : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`
+                                            }
+                                            className="font-extrabold text-white"
+                                        />
+                                    </div>
                                     <img src={winGif} alt="Winner celebration" className="ff-win-gif object-contain"/>
                                 </div>
                             )}
