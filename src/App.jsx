@@ -6,8 +6,8 @@ import Answers from "./components/Answers.jsx";
 import Play from "./components/Play.jsx";
 import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
-import VolumeControl from "./components/VolumeControl.jsx";
 import HostPlay from "./components/HostPlay.jsx";
+import WaitingRoom from "./components/WaitingRoom.jsx";
 
 function App() {
   const location = useLocation();
@@ -23,6 +23,7 @@ function App() {
         <Route path="/play" element={<Play />} />
         <Route path="/host" element={<HostPlay />} />
         <Route path="/instructions" element={<Instructions />} />
+          <Route path="/waiting-room" element={<WaitingRoom />} />
       </Routes>
     </>
   )
