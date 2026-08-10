@@ -71,6 +71,19 @@ function Play() {
 
         socket.emit('join_channel', {roomId, role: 'display'});
 
+        // The host device only has access to its own localStorage, so it can't see the
+        // questions this device saved. Re-push them whenever a host (re)joins the room,
+        // e.g. after the initial QR scan or a page refresh on the host's phone.
+        const handleUserJoined = (data) => {
+            if (data?.role === 'host') {
+                socket.emit('send_action', {
+                    channel: roomId,
+                    action: {type: 'GAME_DATA_SYNC', payload: {questions: game}},
+                });
+            }
+        };
+        socket.on('user_joined', handleUserJoined);
+
         const handleReceiveAction = ({action}) => {
             if (!action) return;
 
@@ -104,9 +117,10 @@ function Play() {
         socket.on('receive_action', handleReceiveAction);
 
         return () => {
+            socket.off('user_joined', handleUserJoined);
             socket.off('receive_action', handleReceiveAction);
         };
-    }, [roomId]);
+    }, [roomId, game]);
 
     // Tracks whether the pending teamNames change was typed here (vs. arriving from the
     // socket), so we only broadcast edits made on this view and never echo back a synced one.

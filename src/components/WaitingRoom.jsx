@@ -17,6 +17,20 @@ export default function QRCode() {
 
             // Redirect if the joining user is a host
             if (data?.role === 'host') {
+                // The host device only has access to its own localStorage, so it can't see
+                // the questions this device saved. Push them over the socket instead.
+                let questions;
+                try {
+                    const stored = localStorage.getItem('familyFeudQuestions');
+                    questions = stored ? JSON.parse(stored) : [];
+                } catch {
+                    questions = [];
+                }
+                socket.emit('send_action', {
+                    channel: roomId,
+                    action: { type: 'GAME_DATA_SYNC', payload: { questions } },
+                });
+
                 navigate('/play', { state: { roomId } });
             }
         };

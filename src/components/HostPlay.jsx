@@ -41,7 +41,10 @@ function Play() {
     const [revealed, setRevealed] = useState(() => new Set());
     const [questionIndex, setQuestionIndex] = useState(0);
 
-    const [game] = useState(() => {
+    // Falls back to this device's own localStorage (e.g. testing host + display in the
+    // same browser); the real data for a phone that scanned the QR code arrives via the
+    // GAME_DATA_SYNC socket action below, since that phone never had it in localStorage.
+    const [game, setGame] = useState(() => {
         try {
             const stored = localStorage.getItem('familyFeudQuestions');
             return stored ? JSON.parse(stored) : [];
@@ -50,18 +53,9 @@ function Play() {
         }
     });
 
-    const [teamNames, setTeamNames] = useState(() => {
-        try {
-            const stored = localStorage.getItem('familyFeudTeamNames');
-            const parsed = stored ? JSON.parse(stored) : null;
-            return {
-                team1: parsed?.team1 || 'Team 1',
-                team2: parsed?.team2 || 'Team 2',
-            };
-        } catch {
-            return { team1: 'Team 1', team2: 'Team 2' };
-        }
-    });
+    // Always start fresh with default team names instead of restoring a previous
+    // session's names from localStorage.
+    const [teamNames, setTeamNames] = useState({ team1: 'Team 1', team2: 'Team 2' });
     const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
     const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
 
@@ -71,6 +65,12 @@ function Play() {
         if (!roomId) return;
 
         const handleReceiveAction = ({action}) => {
+            if (action?.type === 'GAME_DATA_SYNC') {
+                const questions = action.payload?.questions;
+                if (Array.isArray(questions)) setGame(questions);
+                return;
+            }
+
             if (action?.type !== 'TEAM_NAMES_UPDATE') return;
             const nextTeamNames = action.payload?.teamNames;
             if (!nextTeamNames) return;
@@ -153,7 +153,6 @@ function Play() {
             team1: teamOneNameInput.trim() || 'Team 1',
             team2: teamTwoNameInput.trim() || 'Team 2',
         };
-        localStorage.setItem('familyFeudTeamNames', JSON.stringify(nextTeamNames));
         setTeamNames(nextTeamNames);
         setStep('logo');
     };
