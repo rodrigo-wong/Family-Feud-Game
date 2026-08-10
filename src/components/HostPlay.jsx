@@ -275,6 +275,17 @@ function Play() {
         setStrikes(0);
     };
 
+    // Records the team/amount from the most recent award so Previous can undo it if the
+    // host backs up into the assign step again, instead of silently double-counting.
+    const [lastAward, setLastAward] = useState(null);
+
+    const revertLastAward = () => {
+        if (!lastAward) return;
+        if (lastAward.team === 1) setTeamOneScore((prev) => prev - lastAward.points);
+        if (lastAward.team === 2) setTeamTwoScore((prev) => prev - lastAward.points);
+        setLastAward(null);
+    };
+
     // Advances past the current question once all its answers are revealed
     const advanceQuestion = () => {
         if (questionIndex < game.length - 1) {
@@ -291,6 +302,7 @@ function Play() {
     const awardPointsToTeam = (team) => {
         if (team === 1) setTeamOneScore((prev) => prev + currentBoardPoints);
         if (team === 2) setTeamTwoScore((prev) => prev + currentBoardPoints);
+        setLastAward({team, points: currentBoardPoints});
 
         // Reveal any remaining answers one by one before moving on
         const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
@@ -345,16 +357,18 @@ function Play() {
         }
     }, [step, isGameOver, currentAnswers, revealed, questionIndex, game.length, teamNames]);
 
+    // Once a question has been fully awarded and revealed, advancing past it is final —
+    // Previous can no longer reach back into it, whether that's the prior question (once
+    // 'logo' has been reached for the next one) or the last question after game over.
+    const canGoPrev = !isGameOver && !(step === 'logo' && questionIndex > 0);
+
     // Sequence controller for "Previous" button
     const handlePrev = () => {
-        if (isGameOver) {
-            setQuestionIndex(game.length - 1);
-            setStep('assign');
-            return;
-        }
+        if (!canGoPrev) return;
 
         if (step === 'reveal') {
             setStep('assign');
+            revertLastAward();
         } else if (step === 'assign') {
             setStep('board');
         } else if (step === 'board') {
@@ -362,13 +376,7 @@ function Play() {
         } else if (step === 'question') {
             setStep('logo');
         } else if (step === 'logo') {
-            if (questionIndex > 0) {
-                setQuestionIndex((prev) => prev - 1);
-                resetQuestionState();
-                setStep('assign');
-            } else {
-                setStep('teamNames');
-            }
+            setStep('teamNames');
         }
     };
 
@@ -595,6 +603,7 @@ function Play() {
                     <button
                         type="button"
                         onClick={handlePrev}
+                        disabled={!canGoPrev}
                         className="rounded-xl px-4 py-2 font-bold bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
                     >
                         ← Previous

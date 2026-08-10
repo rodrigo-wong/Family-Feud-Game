@@ -65,6 +65,16 @@ function Play() {
         0
     );
 
+    // Once points are assigned, the host's remaining reveals are just theatrics before
+    // moving on — they shouldn't keep bumping the points counter after the fact, so
+    // freeze it at whatever it was the moment 'reveal' was entered.
+    const [frozenBoardPoints, setFrozenBoardPoints] = useState(null);
+    useEffect(() => {
+        setFrozenBoardPoints(step === 'reveal' ? boardPoints : null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step]);
+    const displayedBoardPoints = frozenBoardPoints ?? boardPoints;
+
     // The server echoes send_action back to the sender as well as other room members,
     // so every outgoing action is tagged with its origin and self-echoes are ignored
     // in handleReceiveAction below — otherwise a broadcast can bounce back and stomp
@@ -243,7 +253,7 @@ function Play() {
                     >
                         <div
                             className="ff-points-badge absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-xl bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] scale-[1.2]">
-                            <span className="ff-display-font font-extrabold tracking-wide">{boardPoints}</span>
+                            <span className="ff-display-font font-extrabold tracking-wide">{displayedBoardPoints}</span>
                         </div>
 
                         <div
