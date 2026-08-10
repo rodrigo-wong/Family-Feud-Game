@@ -104,17 +104,35 @@ function Play() {
         });
     };
 
+    const resetQuestionState = () => {
+        setRevealed(new Set());
+        setStrikes(0);
+    };
+
+    // Advances past the current question once all its answers are revealed
+    const advanceQuestion = () => {
+        if (questionIndex < game.length - 1) {
+            setQuestionIndex((prev) => prev + 1);
+            resetQuestionState();
+            setStep('logo');
+        } else {
+            setQuestionIndex(game.length);
+            setStep('gameOver');
+            emitAction({type: 'PLAY_SOUND', payload: {sound: 'over'}});
+        }
+    };
+
     const awardPointsToTeam = (team) => {
         if (team === 1) setTeamOneScore((prev) => prev + currentBoardPoints);
         if (team === 2) setTeamTwoScore((prev) => prev + currentBoardPoints);
 
-        // After awarding points, advance to the next question or game over
-        handleNext();
-    };
-
-    const resetQuestionState = () => {
-        setRevealed(new Set());
-        setStrikes(0);
+        // Reveal any remaining answers one by one before moving on
+        const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
+        if (hasUnrevealed) {
+            setStep('reveal');
+        } else {
+            advanceQuestion();
+        }
     };
 
     // Sequence controller for "Next" button
@@ -125,18 +143,15 @@ function Play() {
             setStep('question');
         } else if (step === 'question') {
             setStep('board');
+        } else if (step === 'reveal') {
+            const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
+            if (nextIndex !== -1) {
+                setRevealed((prev) => new Set(prev).add(nextIndex));
+            } else {
+                advanceQuestion();
+            }
         } else if (step === 'board') {
             setStep('assign');
-        } else if (step === 'assign') {
-            if (questionIndex < game.length - 1) {
-                setQuestionIndex((prev) => prev + 1);
-                resetQuestionState();
-                setStep('logo');
-            } else {
-                setQuestionIndex(game.length);
-                setStep('gameOver');
-                emitAction({type: 'PLAY_SOUND', payload: {sound: 'over'}});
-            }
         }
     };
 
@@ -148,7 +163,9 @@ function Play() {
             return;
         }
 
-        if (step === 'assign') {
+        if (step === 'reveal') {
+            setStep('assign');
+        } else if (step === 'assign') {
             setStep('board');
         } else if (step === 'board') {
             setStep('question');
@@ -331,7 +348,7 @@ function Play() {
                     <button
                         type="button"
                         onClick={handleNext}
-                        disabled={isGameOver}
+                        disabled={isGameOver || step === 'assign'}
                         className="rounded-xl px-4 py-2 font-bold bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
                     >
                         Next →
