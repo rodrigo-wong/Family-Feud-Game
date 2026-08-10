@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Link, useLocation} from 'react-router-dom';
+import {Link, useLocation, useSearchParams} from 'react-router-dom';
 import {io} from 'socket.io-client';
 import logo from '../assets/family-feud-logo.png';
 import introSound from '../assets/sounds/introduction.mp3';
@@ -32,7 +32,8 @@ const SOUND_MAP = {
 
 function Play() {
     const location = useLocation();
-    const roomId = location.state?.roomId;
+    const [searchParams] = useSearchParams();
+    const roomId = searchParams.get('roomId') ?? location.state?.roomId;
 
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -165,6 +166,8 @@ function Play() {
             document.documentElement.requestFullscreen();
         }
     };
+
+    if (!roomId) return null;
 
     return (
         <div>

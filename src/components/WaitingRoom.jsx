@@ -28,7 +28,7 @@ export default function QRCode() {
                     action: { type: 'GAME_DATA_SYNC', payload: { questions } },
                 });
 
-                navigate('/play', { state: { roomId } });
+                navigate(`/play?roomId=${roomId}`);
             }
         };
 

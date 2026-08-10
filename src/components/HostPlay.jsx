@@ -143,6 +143,39 @@ function Play() {
         });
     }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, emitAction]);
 
+    // Always holds the latest state snapshot so the user_joined handler below never
+    // closes over stale values without having to resubscribe on every state change.
+    const latestStateRef = useRef(null);
+    useEffect(() => {
+        latestStateRef.current = {
+            step,
+            questionIndex,
+            revealed: Array.from(revealed),
+            strikes,
+            teamOneScore,
+            teamTwoScore,
+            teamNames,
+        };
+    });
+
+    // The display only gets state via the STATE_UPDATE broadcast above, which fires on
+    // change, not on (re)join. If the display refreshes, it misses that history entirely,
+    // so re-send the host's current state whenever a display (re)joins the room.
+    useEffect(() => {
+        if (!roomId) return;
+
+        const handleUserJoined = (data) => {
+            if (data?.role === 'display' && latestStateRef.current) {
+                emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
+            }
+        };
+        socket.on('user_joined', handleUserJoined);
+
+        return () => {
+            socket.off('user_joined', handleUserJoined);
+        };
+    }, [roomId, emitAction]);
+
     // Plays the intro music on the display whenever the team-names section is entered
     useEffect(() => {
         if (!roomId || step !== 'teamNames') return;
@@ -279,6 +312,8 @@ function Play() {
         setStrikes(count);
         setTimeout(() => setStrikes(0), 2000);
     };
+
+    if (!roomId) return null;
 
     if (step === 'teamNames') {
         return (
