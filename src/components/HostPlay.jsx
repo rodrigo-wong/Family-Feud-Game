@@ -402,22 +402,22 @@ function Play() {
                                 <p className="ff-display-font text-center text-white font-bold">
                                     Award {currentBoardPoints} points to:
                                 </p>
-                                <div className="flex gap-4">
+                                <div className="flex flex-wrap items-center justify-center gap-4 px-4 max-w-full">
                                     <button
                                         type="button"
                                         onClick={() => awardPointsToTeam(1)}
-                                        className="flex items-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
+                                        className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
                                     >
-                                        <span className="w-32 h-6"><FitText text={teamNames.team1} className="font-extrabold" /></span>
-                                        <span>(+{currentBoardPoints})</span>
+                                        <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team1}</span>
+                                        <span className="shrink-0">(+{currentBoardPoints})</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => awardPointsToTeam(2)}
-                                        className="flex items-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer"
+                                        className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
                                     >
-                                        <span className="w-32 h-6"><FitText text={teamNames.team2} className="font-extrabold" /></span>
-                                        <span>(+{currentBoardPoints})</span>
+                                        <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team2}</span>
+                                        <span className="shrink-0">(+{currentBoardPoints})</span>
                                     </button>
                                 </div>
                             </div>
