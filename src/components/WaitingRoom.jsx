@@ -15,10 +15,7 @@ export default function QRCode() {
         const handleUserJoined = (data) => {
             console.log('User joined payload:', data);
 
-            // Redirect if the joining user is a host
             if (data?.role === 'host') {
-                // The host device only has access to its own localStorage, so it can't see
-                // the questions this device saved. Push them over the socket instead.
                 let questions;
                 try {
                     const stored = localStorage.getItem('familyFeudQuestions');
