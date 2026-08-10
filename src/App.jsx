@@ -7,6 +7,7 @@ import Play from "./components/Play.jsx";
 import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
 import VolumeControl from "./components/VolumeControl.jsx";
+import HostPlay from "./components/HostPlay.jsx";
 
 function App() {
   const location = useLocation();
@@ -14,13 +15,13 @@ function App() {
   return (
     <>
       <DotGridBackground />
-      <VolumeControl />
       <Routes>
         <Route path="/" element={<Intro key={location.key} />} />
         <Route path="/select-game" element={<SelectGame />} />
         <Route path="/setup-game" element={<SetupGame />} />
         <Route path="/answers" element={<Answers />} />
         <Route path="/play" element={<Play />} />
+        <Route path="/host" element={<HostPlay />} />
         <Route path="/instructions" element={<Instructions />} />
       </Routes>
     </>
