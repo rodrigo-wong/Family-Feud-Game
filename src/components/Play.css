@@ -67,6 +67,10 @@
 }
 
 .ff-assign-btn {
+  /* FitText measures this box's own pixel size to compute a font size; without an
+     explicit width here, its w-full child has nothing definite to resolve against
+     and collapses to 0, leaving the text invisible even though it's populated. */
+  width: clamp(6rem, 16.67cqw, 19.2rem);
   padding: clamp(0.375rem, 1.0417cqw, 1.2rem) clamp(0.75rem, 2.08cqw, 2.4rem);
   font-size: clamp(0.75rem, 2.08cqw, 2.4rem);
 }
