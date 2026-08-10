@@ -257,44 +257,47 @@ function Play() {
 
     if (step === 'teamNames') {
         return (
-            <div className="relative flex flex-col items-center justify-center h-screen w-full overflow-hidden p-4 text-white">
-                <img src={logo} alt="Family Feud logo" className="max-h-64 max-w-full object-contain mb-8" />
-                <div className="flex flex-col items-center gap-4 w-full max-w-md">
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                        <input
-                            type="text"
-                            value={teamOneNameInput}
-                            onChange={(e) => handleTeamNameInputChange('team1', e.target.value)}
-                            placeholder="Team 1"
-                            maxLength={20}
-                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
-                        />
-                        <input
-                            type="text"
-                            value={teamTwoNameInput}
-                            onChange={(e) => handleTeamNameInputChange('team2', e.target.value)}
-                            placeholder="Team 2"
-                            maxLength={20}
-                            className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
-                        />
+            <div className="relative flex flex-col items-center h-dvh w-full overflow-y-auto p-4 text-white">
+                <div className="m-auto flex flex-col items-center">
+                    <img src={logo} alt="Family Feud logo" className="max-h-[min(16rem,30vh)] max-w-full object-contain mb-8 shrink-0" />
+                    <div className="flex flex-col items-center gap-4 w-full max-w-md shrink-0">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                            <input
+                                type="text"
+                                value={teamOneNameInput}
+                                onChange={(e) => handleTeamNameInputChange('team1', e.target.value)}
+                                placeholder="Team 1"
+                                maxLength={20}
+                                className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                            />
+                            <input
+                                type="text"
+                                value={teamTwoNameInput}
+                                onChange={(e) => handleTeamNameInputChange('team2', e.target.value)}
+                                placeholder="Team 2"
+                                maxLength={20}
+                                className="text-center text-xl font-bold bg-gray-900 border-2 rounded-2xl border-white px-4 py-3 text-white w-60 focus:outline-none focus:border-yellow-400"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleSetTeamNames}
+                            className="block text-center text-3xl font-bold bg-yellow-600 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                        >
+                            CONTINUE
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleSetTeamNames}
-                        className="block text-center text-3xl font-bold bg-yellow-600 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                        CONTINUE
-                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="relative flex flex-col items-center h-screen overflow-hidden px-4 py-4 text-white">
+        <div className="relative flex flex-col items-center h-dvh w-full overflow-hidden px-4 pt-4 text-white">
             <Fireworks active={isGameOver} />
 
-            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
+            <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center">
+                <div className="m-auto flex flex-col items-center gap-4 w-full py-2">
                 <div className="w-full">
                     {/* Board Grid */}
                     <div className="relative">
@@ -435,10 +438,11 @@ function Play() {
                         Question {questionIndex + 1} of {game.length} • Step: {step.toUpperCase()}
                     </span>
                 )}
+                </div>
             </div>
 
             {/* Host Controls */}
-            <div className="relative z-50 flex flex-wrap items-center justify-center gap-4 pb-2 bg-gray-900/90 p-3 rounded-2xl border border-white/20">
+            <div className="relative z-50 shrink-0 flex flex-wrap items-center justify-center gap-4 my-2 bg-gray-900/90 p-3 rounded-2xl border border-white/20">
                 {/* Step Sequence Navigation */}
                 <div className="flex gap-2">
                     <button
