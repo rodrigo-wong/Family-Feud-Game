@@ -7,7 +7,7 @@ import './Play.css';
 import {io} from "socket.io-client";
 import { useSearchParams } from 'react-router-dom';
 
-const socket = io('http://localhost:4000');
+const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;

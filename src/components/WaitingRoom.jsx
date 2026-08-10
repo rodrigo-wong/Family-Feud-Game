@@ -3,12 +3,12 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {io} from "socket.io-client";
 import {useEffect} from "react";
 
-const socket = io('http://localhost:4000');
+const socket = io(import.meta.env.VITE_BACKEND_URL);
 export default function QRCode() {
     const location = useLocation();
     const navigate = useNavigate();
     const roomId = location.state?.roomId;
-    const url = `https://127.0.0.1:5173/host?roomId=${roomId}`;
+    const url = `${import.meta.env.VITE_FRONTEND_URL}/host?roomId=${roomId}`;
     useEffect(() => {
         if (!roomId) return;
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 export default function QRCode({ roomId }) {
-    const url = `https://127.0.0.1:5173/host?room=${roomId}`;
+    const url = `${import.meta.env.VITE_FRONTEND_URL}/host?room=${roomId}`;
 
     return (
         <div className="inline-flex flex-col items-center">

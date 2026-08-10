@@ -15,7 +15,7 @@ import Fireworks from './Fireworks';
 import './Play.css';
 import VolumeControl from "./VolumeControl.jsx";
 
-const socket = io('http://localhost:4000');
+const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
