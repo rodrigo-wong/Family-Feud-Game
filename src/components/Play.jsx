@@ -65,10 +65,29 @@ function Play() {
         0
     );
 
+    // The server echoes send_action back to the sender as well as other room members,
+    // so every outgoing action is tagged with its origin and self-echoes are ignored
+    // in handleReceiveAction below — otherwise a broadcast can bounce back and stomp
+    // on state (e.g. a draft input) that changed in the interim.
     const emitAction = useCallback((action) => {
         if (!roomId) return;
-        socket.emit('send_action', {channel: roomId, action});
+        socket.emit('send_action', {channel: roomId, action: {...action, from: 'display'}});
     }, [roomId]);
+
+    // Always holds the latest state snapshot so handleUserJoined below never closes
+    // over stale values without having to resubscribe on every state change.
+    const latestStateRef = useRef(null);
+    useEffect(() => {
+        latestStateRef.current = {
+            step,
+            questionIndex,
+            revealed: Array.from(revealed),
+            strikes,
+            teamOneScore,
+            teamTwoScore,
+            teamNames,
+        };
+    });
 
     useEffect(() => {
         if (!roomId) return;
@@ -76,20 +95,21 @@ function Play() {
         socket.emit('join_channel', {roomId, role: 'display'});
 
         // The host device only has access to its own localStorage, so it can't see the
-        // questions this device saved. Re-push them whenever a host (re)joins the room,
-        // e.g. after the initial QR scan or a page refresh on the host's phone.
+        // questions this device saved, nor does it retain step/score progress across a
+        // refresh. Re-push both whenever a host (re)joins the room, e.g. after the
+        // initial QR scan or a page refresh on the host's phone.
         const handleUserJoined = (data) => {
             if (data?.role === 'host') {
-                socket.emit('send_action', {
-                    channel: roomId,
-                    action: {type: 'GAME_DATA_SYNC', payload: {questions: game}},
-                });
+                emitAction({type: 'GAME_DATA_SYNC', payload: {questions: game}});
+                if (latestStateRef.current) {
+                    emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
+                }
             }
         };
         socket.on('user_joined', handleUserJoined);
 
         const handleReceiveAction = ({action}) => {
-            if (!action) return;
+            if (!action || action.from === 'display') return;
 
             if (action.type === 'STATE_UPDATE') {
                 const {
@@ -124,7 +144,7 @@ function Play() {
             socket.off('user_joined', handleUserJoined);
             socket.off('receive_action', handleReceiveAction);
         };
-    }, [roomId, game]);
+    }, [roomId, game, emitAction]);
 
     // Tracks whether the pending teamNames change was typed here (vs. arriving from the
     // socket), so we only broadcast edits made on this view and never echo back a synced one.

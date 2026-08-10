@@ -7,11 +7,28 @@ import FitText from './FitText';
 import './Play.css';
 import {io} from "socket.io-client";
 import {useSearchParams} from 'react-router-dom';
+import {getCookie, setCookie} from '../utils/cookies';
 
 const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
+const HOST_STATE_MAX_AGE_SECONDS = 15 * 60;
+
+const hostStateKey = (roomId) => `familyFeudHostState:${roomId}`;
+
+// Scoped per roomId so a stale session from a previous game doesn't leak into a new one.
+// Stored as a cookie (rather than localStorage) so it naturally expires 15 minutes
+// after the host was last active, instead of lingering forever.
+function readStoredHostState(roomId) {
+    if (!roomId) return null;
+    try {
+        const stored = getCookie(hostStateKey(roomId));
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        return null;
+    }
+}
 
 function Play() {
     // FIX: Destructure the array returned by useSearchParams
@@ -28,19 +45,24 @@ function Play() {
     // Broadcasts a one-off action (e.g. a sound cue) to the display view.
     // Persistent state changes are instead broadcast by the STATE_UPDATE effect below,
     // so the display self-heals even if an individual action event is dropped.
+    //
+    // The server echoes send_action back to the sender as well as other room members,
+    // so every outgoing action is tagged with its origin and self-echoes are ignored
+    // in handleReceiveAction below — otherwise a broadcast can bounce back and stomp
+    // on state (e.g. a draft input) that changed in the interim.
     const emitAction = useCallback((action) => {
         if (!roomId) return;
-        socket.emit('send_action', {channel: roomId, action});
+        socket.emit('send_action', {channel: roomId, action: {...action, from: 'host'}});
     }, [roomId]);
 
-    const [teamOneScore, setTeamOneScore] = useState(0);
-    const [teamTwoScore, setTeamTwoScore] = useState(0);
+    const [teamOneScore, setTeamOneScore] = useState(() => readStoredHostState(roomId)?.teamOneScore ?? 0);
+    const [teamTwoScore, setTeamTwoScore] = useState(() => readStoredHostState(roomId)?.teamTwoScore ?? 0);
 
     // Step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> ('reveal') -> ...
-    const [step, setStep] = useState('teamNames');
-    const [strikes, setStrikes] = useState(0);
-    const [revealed, setRevealed] = useState(() => new Set());
-    const [questionIndex, setQuestionIndex] = useState(0);
+    const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'teamNames');
+    const [strikes, setStrikes] = useState(() => readStoredHostState(roomId)?.strikes ?? 0);
+    const [revealed, setRevealed] = useState(() => new Set(readStoredHostState(roomId)?.revealed ?? []));
+    const [questionIndex, setQuestionIndex] = useState(() => readStoredHostState(roomId)?.questionIndex ?? 0);
 
     // Falls back to this device's own localStorage (e.g. testing host + display in the
     // same browser); the real data for a phone that scanned the QR code arrives via the
@@ -54,9 +76,9 @@ function Play() {
         }
     });
 
-    // Always start fresh with default team names instead of restoring a previous
-    // session's names from localStorage.
-    const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
+    const [teamNames, setTeamNames] = useState(
+        () => readStoredHostState(roomId)?.teamNames ?? {team1: 'Team 1', team2: 'Team 2'}
+    );
     const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
     const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
 
@@ -66,9 +88,39 @@ function Play() {
         if (!roomId) return;
 
         const handleReceiveAction = ({action}) => {
+            if (!action || action.from === 'host') return;
+
             if (action?.type === 'GAME_DATA_SYNC') {
                 const questions = action.payload?.questions;
                 if (Array.isArray(questions)) setGame(questions);
+                return;
+            }
+
+            if (action?.type === 'STATE_UPDATE') {
+                // The host has no persistence of its own, so if this device refreshes it
+                // relies on the display view (which mirrors the host via the same action)
+                // to push back the last known state on rejoin.
+                const {
+                    step: nextStep,
+                    questionIndex: nextQuestionIndex,
+                    revealed: nextRevealed,
+                    strikes: nextStrikes,
+                    teamOneScore: nextTeamOneScore,
+                    teamTwoScore: nextTeamTwoScore,
+                    teamNames: nextTeamNames,
+                } = action.payload;
+
+                setStep(nextStep);
+                setQuestionIndex(nextQuestionIndex);
+                setRevealed(new Set(nextRevealed));
+                setStrikes(nextStrikes);
+                setTeamOneScore(nextTeamOneScore);
+                setTeamTwoScore(nextTeamTwoScore);
+                if (nextTeamNames) {
+                    setTeamNames(nextTeamNames);
+                    setTeamOneNameInput(nextTeamNames.team1);
+                    setTeamTwoNameInput(nextTeamNames.team2);
+                }
                 return;
             }
 
@@ -145,9 +197,12 @@ function Play() {
 
     // Always holds the latest state snapshot so the user_joined handler below never
     // closes over stale values without having to resubscribe on every state change.
+    // Also persisted to a cookie (refreshed on every change) so a refresh on this
+    // device restores state immediately without waiting on a round trip to the
+    // display, and so an abandoned session is forgotten after 15 minutes of inactivity.
     const latestStateRef = useRef(null);
     useEffect(() => {
-        latestStateRef.current = {
+        const snapshot = {
             step,
             questionIndex,
             revealed: Array.from(revealed),
@@ -156,6 +211,16 @@ function Play() {
             teamTwoScore,
             teamNames,
         };
+        latestStateRef.current = snapshot;
+
+        if (roomId) {
+            try {
+                setCookie(hostStateKey(roomId), JSON.stringify(snapshot), HOST_STATE_MAX_AGE_SECONDS);
+            } catch {
+                // Cookies may be disabled (e.g. private browsing); state still lives in
+                // memory and can resync from the display over the socket.
+            }
+        }
     });
 
     // The display only gets state via the STATE_UPDATE broadcast above, which fires on
