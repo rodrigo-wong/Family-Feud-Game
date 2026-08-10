@@ -202,7 +202,7 @@ function Play() {
         ← Home
       </Link>
 
-      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
+      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4 pt-9">
         <div
             className="ff-board relative border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]"
             style={{

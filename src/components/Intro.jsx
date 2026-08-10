@@ -12,7 +12,6 @@ function Intro() {
         ); // 'menu' | 'teamNames'
         const [teamOneName, setTeamOneName] = useState('Team 1');
         const [teamTwoName, setTeamTwoName] = useState('Team 2');
-        const navigateTimeout = useRef(null);
 
         const goToPlay = () => {
             localStorage.setItem('familyFeudTeamNames', JSON.stringify({
@@ -25,13 +24,9 @@ function Intro() {
         useEffect(() => {
             if (stage !== 'teamNames') return;
             playSound(introSound);
-            navigateTimeout.current = setTimeout(goToPlay, 12000);
-            return () => clearTimeout(navigateTimeout.current);
-            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [stage]);
 
         const handleContinue = () => {
-            clearTimeout(navigateTimeout.current);
             goToPlay();
         };
 
