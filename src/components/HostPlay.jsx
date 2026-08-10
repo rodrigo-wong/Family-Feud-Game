@@ -6,7 +6,7 @@ import Fireworks from './Fireworks';
 import FitText from './FitText';
 import './Play.css';
 import {io} from "socket.io-client";
-import { useSearchParams } from 'react-router-dom';
+import {useSearchParams} from 'react-router-dom';
 
 const socket = io(import.meta.env.VITE_BACKEND_URL);
 
@@ -56,7 +56,7 @@ function Play() {
 
     // Always start fresh with default team names instead of restoring a previous
     // session's names from localStorage.
-    const [teamNames, setTeamNames] = useState({ team1: 'Team 1', team2: 'Team 2' });
+    const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
     const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
     const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
 
@@ -223,6 +223,30 @@ function Play() {
         }
     };
 
+    // Describes what the "Next" button will do from the current step, so the host
+    // doesn't have to guess before clicking.
+    const nextActionLabel = useMemo(() => {
+        if (isGameOver) return 'Game over';
+
+        switch (step) {
+            case 'logo':
+                return 'Show question';
+            case 'question':
+                return 'Show board';
+            case 'board':
+                return 'Choose which team to award points';
+            case 'assign':
+                return `Select ${teamNames.team1} or ${teamNames.team2} above`;
+            case 'reveal': {
+                const nextIndex = currentAnswers.findIndex((_, i) => !revealed.has(i));
+                if (nextIndex !== -1) return `Reveal answer #${nextIndex + 1}`;
+                return questionIndex < game.length - 1 ? 'Move to next question' : 'End game';
+            }
+            default:
+                return '';
+        }
+    }, [step, isGameOver, currentAnswers, revealed, questionIndex, game.length, teamNames]);
+
     // Sequence controller for "Previous" button
     const handlePrev = () => {
         if (isGameOver) {
@@ -260,7 +284,8 @@ function Play() {
         return (
             <div className="relative flex flex-col items-center h-dvh w-full overflow-y-auto p-4 text-white">
                 <div className="m-auto flex flex-col items-center">
-                    <img src={logo} alt="Family Feud logo" className="max-h-[min(16rem,30vh)] max-w-full object-contain mb-8 shrink-0" />
+                    <img src={logo} alt="Family Feud logo"
+                         className="max-h-[min(16rem,30vh)] max-w-full object-contain mb-8 shrink-0"/>
                     <div className="flex flex-col items-center gap-4 w-full max-w-md shrink-0">
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
                             <input
@@ -295,53 +320,54 @@ function Play() {
 
     return (
         <div className="relative flex flex-col items-center h-dvh w-full overflow-hidden px-4 pt-4 text-white">
-            <Fireworks active={isGameOver} />
+            <Fireworks active={isGameOver}/>
 
             <div className="flex-1 min-h-0 w-full flex flex-col items-center">
                 <div className="flex-1 min-h-0 flex flex-col items-center gap-2 w-full py-2">
-                <div className="w-full flex-1 min-h-0 flex flex-col">
-                    {/* Board Grid */}
-                    <div className="relative flex-1 min-h-0 flex flex-col">
-                        <div className="ff-panel relative bg-black/70 border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex-1 min-h-0 flex flex-col">
-                            <div className="grid grid-cols-1 grid-rows-8 grid-flow-col flex-1 min-h-0">
-                                {Array.from({ length: SLOT_COUNT }).map((_, i) => {
-                                    const answer = currentAnswers[i];
-                                    const isRevealed = revealed.has(i);
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
+                        {/* Board Grid */}
+                        <div className="relative flex-1 min-h-0 flex flex-col">
+                            <div
+                                className="ff-panel relative bg-black/70 border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex-1 min-h-0 flex flex-col">
+                                <div className="grid grid-cols-1 grid-rows-8 grid-flow-col flex-1 min-h-0">
+                                    {Array.from({length: SLOT_COUNT}).map((_, i) => {
+                                        const answer = currentAnswers[i];
+                                        const isRevealed = revealed.has(i);
 
-                                    return (
-                                        <div
-                                            key={i}
-                                            className="m-0.5 min-h-0 rounded-md border-4 border-black bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 p-1"
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleAnswer(i)}
-                                                disabled={!answer || isGameOver}
-                                                className={`relative w-full h-full min-h-0 rounded-sm overflow-hidden flex gap-1 shadow-md transition-colors duration-300 ${
-                                                    answer ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-50'
-                                                }`}
+                                        return (
+                                            <div
+                                                key={i}
+                                                className="m-0.5 min-h-0 rounded-md border-4 border-black bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 p-1"
                                             >
-                                                {answer ? (
-                                                    <>
-                                                        {/* Number Slot */}
-                                                        <span
-                                                            className={`shrink-0 w-12 h-full flex items-center justify-center font-extrabold text-white text-lg transition-colors duration-300 ${
-                                                                isRevealed
-                                                                    ? 'bg-[linear-gradient(to_bottom,#059669_0%,#047857_100%)] border-r border-emerald-400'
-                                                                    : 'bg-[linear-gradient(to_bottom,#334155_0%,#1e293b_100%)] border-r border-gray-600'
-                                                            }`}
-                                                        >
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleAnswer(i)}
+                                                    disabled={!answer || isGameOver}
+                                                    className={`relative w-full h-full min-h-0 rounded-sm overflow-hidden flex gap-1 shadow-md transition-colors duration-300 ${
+                                                        answer ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-50'
+                                                    }`}
+                                                >
+                                                    {answer ? (
+                                                        <>
+                                                            {/* Number Slot */}
+                                                            <span
+                                                                className={`shrink-0 w-12 h-full flex items-center justify-center font-extrabold text-white text-lg transition-colors duration-300 ${
+                                                                    isRevealed
+                                                                        ? 'bg-[linear-gradient(to_bottom,#059669_0%,#047857_100%)] border-r border-emerald-400'
+                                                                        : 'bg-[linear-gradient(to_bottom,#334155_0%,#1e293b_100%)] border-r border-gray-600'
+                                                                }`}
+                                                            >
                                                             {i + 1}
                                                         </span>
 
-                                                        {/* Answer Text Area */}
-                                                        <span
-                                                            className={`flex-1 h-full flex items-center px-4 transition-colors duration-300 ${
-                                                                isRevealed
-                                                                    ? 'bg-[linear-gradient(to_bottom,#059669_0%,#047857_100%)]'
-                                                                    : 'bg-[linear-gradient(to_bottom,#1e293b_0%,#0f172a_100%)]'
-                                                            }`}
-                                                        >
+                                                            {/* Answer Text Area */}
+                                                            <span
+                                                                className={`flex-1 h-full flex items-center px-4 transition-colors duration-300 ${
+                                                                    isRevealed
+                                                                        ? 'bg-[linear-gradient(to_bottom,#059669_0%,#047857_100%)]'
+                                                                        : 'bg-[linear-gradient(to_bottom,#1e293b_0%,#0f172a_100%)]'
+                                                                }`}
+                                                            >
                                                             <span className="w-full h-6">
                                                                 <FitText
                                                                     text={answer.text.toUpperCase()}
@@ -352,14 +378,14 @@ function Play() {
                                                             </span>
                                                         </span>
 
-                                                        {/* Answer Points Area */}
-                                                        <span
-                                                            className={`shrink-0 w-16 h-full flex items-center justify-center transition-colors duration-300 ${
-                                                                isRevealed
-                                                                    ? 'bg-[linear-gradient(to_bottom,#34d399_0%,#059669_100%)]'
-                                                                    : 'bg-[linear-gradient(to_bottom,#334155_0%,#1e293b_100%)]'
-                                                            }`}
-                                                        >
+                                                            {/* Answer Points Area */}
+                                                            <span
+                                                                className={`shrink-0 w-16 h-full flex items-center justify-center transition-colors duration-300 ${
+                                                                    isRevealed
+                                                                        ? 'bg-[linear-gradient(to_bottom,#34d399_0%,#059669_100%)]'
+                                                                        : 'bg-[linear-gradient(to_bottom,#334155_0%,#1e293b_100%)]'
+                                                                }`}
+                                                            >
                                                             <span
                                                                 className={`ff-num-font font-extrabold transition-colors duration-300 ${
                                                                     isRevealed ? 'text-white' : 'text-gray-400'
@@ -368,88 +394,102 @@ function Play() {
                                                                 {answer.points}
                                                             </span>
                                                         </span>
-                                                    </>
-                                                ) : (
-                                                    /* Empty Slot */
-                                                    <span className="w-full h-full bg-[#0d1524] flex items-center justify-center text-gray-600 font-bold">
+                                                        </>
+                                                    ) : (
+                                                        /* Empty Slot */
+                                                        <span
+                                                            className="w-full h-full bg-[#0d1524] flex items-center justify-center text-gray-600 font-bold">
                                                         ---
                                                     </span>
-                                                )}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                                                    )}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
+
+                            {/* Sequential Overlays */}
+                            {step === 'logo' && (
+                                <div
+                                    className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
+                                    <img src={logo} alt="Family Feud logo"
+                                         className="max-h-full max-w-full object-contain"/>
+                                </div>
+                            )}
+
+                            {step === 'question' && (
+                                <div
+                                    className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center p-6 z-40">
+                                    <p className="ff-display-font text-center text-white font-bold">
+                                        {currentQuestion || 'No question set available.'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {step === 'assign' && (
+                                <div
+                                    className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
+                                    <p className="ff-display-font text-center text-white font-bold">
+                                        Award {currentBoardPoints} points to:
+                                    </p>
+                                    <div className="flex flex-wrap items-center justify-center gap-4 px-4 max-w-full">
+                                        <button
+                                            type="button"
+                                            onClick={() => awardPointsToTeam(1)}
+                                            className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
+                                        >
+                                            <span
+                                                className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team1}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => awardPointsToTeam(2)}
+                                            className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
+                                        >
+                                            <span
+                                                className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team2}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isGameOver && (
+                                <div
+                                    className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
+                                    <div className="w-full max-w-xl h-12">
+                                        <FitText
+                                            text={
+                                                teamOneScore === teamTwoScore
+                                                    ? "It's a tie!"
+                                                    : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`
+                                            }
+                                            className="font-extrabold text-white"
+                                        />
+                                    </div>
+                                    <img src={winGif} alt="Winner celebration" className="ff-win-gif object-contain"/>
+                                </div>
+                            )}
                         </div>
-
-                        {/* Sequential Overlays */}
-                        {step === 'logo' && (
-                            <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
-                                <img src={logo} alt="Family Feud logo" className="max-h-full max-w-full object-contain" />
-                            </div>
-                        )}
-
-                        {step === 'question' && (
-                            <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center p-6 z-40">
-                                <p className="ff-display-font text-center text-white font-bold">
-                                    {currentQuestion || 'No question set available.'}
-                                </p>
-                            </div>
-                        )}
-
-                        {step === 'assign' && (
-                            <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
-                                <p className="ff-display-font text-center text-white font-bold">
-                                    Award {currentBoardPoints} points to:
-                                </p>
-                                <div className="flex flex-wrap items-center justify-center gap-4 px-4 max-w-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => awardPointsToTeam(1)}
-                                        className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
-                                    >
-                                        <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team1}</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => awardPointsToTeam(2)}
-                                        className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
-                                    >
-                                        <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team2}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {isGameOver && (
-                            <div className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 flex flex-col items-center justify-center gap-6 z-40">
-                                <div className="w-full max-w-xl h-12">
-                                    <FitText
-                                        text={
-                                            teamOneScore === teamTwoScore
-                                                ? "It's a tie!"
-                                                : `${teamOneScore > teamTwoScore ? teamNames.team1 : teamNames.team2} wins!`
-                                        }
-                                        className="font-extrabold text-white"
-                                    />
-                                </div>
-                                <img src={winGif} alt="Winner celebration" className="ff-win-gif object-contain" />
-                            </div>
-                        )}
                     </div>
-                </div>
 
-                {/* Question Counter */}
-                {game.length > 0 && !isGameOver && (
-                    <span className="text-white/60 text-sm">
-                        Question {questionIndex + 1} of {game.length} • Step: {step.toUpperCase()}
-                    </span>
-                )}
+                    {/* Question Counter */}
+                    {game.length > 0 && !isGameOver ? (
+                        <p className="text-white/60 text-sm text-center">
+                            Question {questionIndex + 1} of {game.length}
+                            <br />
+                            {step === 'assign' ? nextActionLabel : `Next: ${nextActionLabel}`}
+                        </p>
+                    ) : (
+                        <p className="text-white/60 text-sm text-center">
+                            {step === 'assign' ? nextActionLabel : `Next: ${nextActionLabel}`}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* Host Controls */}
-            <div className="relative z-50 shrink-0 flex flex-wrap items-center justify-center gap-4 my-2 bg-gray-900/90 p-3 rounded-2xl border border-white/20">
+            <div
+                className="relative z-50 shrink-0 flex flex-wrap items-center justify-center gap-4 my-2 bg-gray-900/90 p-3 rounded-2xl border border-white/20">
                 {/* Step Sequence Navigation */}
                 <div className="flex gap-2">
                     <button
@@ -503,10 +543,11 @@ function Play() {
 
             {/* Strikes Overlay */}
             {strikes > 0 && (
-                <div className="fixed inset-0 flex items-center justify-center gap-6 bg-black/60 z-50 pointer-events-none">
-                    {Array.from({ length: strikes }).map((_, i) => (
+                <div
+                    className="fixed inset-0 flex items-center justify-center gap-6 bg-black/60 z-50 pointer-events-none">
+                    {Array.from({length: strikes}).map((_, i) => (
                         <span key={i} className="text-[12rem] font-black text-red-600">
-                            <img src={x} alt="Strike" className="w-48 h-48 object-contain" />
+                            <img src={x} alt="Strike" className="w-48 h-48 object-contain"/>
                         </span>
                     ))}
                 </div>
