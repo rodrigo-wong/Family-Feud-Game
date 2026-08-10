@@ -263,7 +263,9 @@ function Play() {
             if (next.has(index)) {
                 next.delete(index);
             } else {
-                emitAction({type: 'PLAY_SOUND', payload: {sound: 'yes'}});
+                if (step !== 'reveal') {
+                    emitAction({type: 'PLAY_SOUND', payload: {sound: 'yes'}});
+                }
                 next.add(index);
             }
             return next;
