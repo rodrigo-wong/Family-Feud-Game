@@ -409,7 +409,6 @@ function Play() {
                                         className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
                                     >
                                         <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team1}</span>
-                                        <span className="shrink-0">(+{currentBoardPoints})</span>
                                     </button>
                                     <button
                                         type="button"
@@ -417,7 +416,6 @@ function Play() {
                                         className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold bg-green-600 hover:bg-green-500 text-white transition cursor-pointer max-w-full"
                                     >
                                         <span className="w-24 min-w-0 whitespace-normal break-words leading-tight text-center font-extrabold">{teamNames.team2}</span>
-                                        <span className="shrink-0">(+{currentBoardPoints})</span>
                                     </button>
                                 </div>
                             </div>
