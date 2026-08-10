@@ -297,13 +297,13 @@ function Play() {
         <div className="relative flex flex-col items-center h-dvh w-full overflow-hidden px-4 pt-4 text-white">
             <Fireworks active={isGameOver} />
 
-            <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center">
-                <div className="m-auto flex flex-col items-center gap-4 w-full py-2">
-                <div className="w-full">
+            <div className="flex-1 min-h-0 w-full flex flex-col items-center">
+                <div className="flex-1 min-h-0 flex flex-col items-center gap-2 w-full py-2">
+                <div className="w-full flex-1 min-h-0 flex flex-col">
                     {/* Board Grid */}
-                    <div className="relative">
-                        <div className="ff-panel relative bg-black/70 border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)]">
-                            <div className="grid grid-cols-1 grid-rows-8 grid-flow-col">
+                    <div className="relative flex-1 min-h-0 flex flex-col">
+                        <div className="ff-panel relative bg-black/70 border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex-1 min-h-0 flex flex-col">
+                            <div className="grid grid-cols-1 grid-rows-8 grid-flow-col flex-1 min-h-0">
                                 {Array.from({ length: SLOT_COUNT }).map((_, i) => {
                                     const answer = currentAnswers[i];
                                     const isRevealed = revealed.has(i);
@@ -311,13 +311,13 @@ function Play() {
                                     return (
                                         <div
                                             key={i}
-                                            className="m-0.5 rounded-md border-4 border-black bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 p-1"
+                                            className="m-0.5 min-h-0 rounded-md border-4 border-black bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 p-1"
                                         >
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAnswer(i)}
                                                 disabled={!answer || isGameOver}
-                                                className={`relative w-full h-12 rounded-sm overflow-hidden flex gap-1 shadow-md transition-colors duration-300 ${
+                                                className={`relative w-full h-full min-h-0 rounded-sm overflow-hidden flex gap-1 shadow-md transition-colors duration-300 ${
                                                     answer ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-50'
                                                 }`}
                                             >
