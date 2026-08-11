@@ -47,6 +47,10 @@ function Play() {
     const [teamTwoScore, setTeamTwoScore] = useState(() => readStoredHostState(roomId)?.teamTwoScore ?? 0);
 
     const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'teamNames');
+    const stepRef = useRef(step);
+    useEffect(() => {
+        stepRef.current = step;
+    }, [step]);
     const [strikes, setStrikes] = useState(() => readStoredHostState(roomId)?.strikes ?? 0);
     const [lastStrikeClicked, setLastStrikeClicked] = useState(null);
     const [revealed, setRevealed] = useState(() => new Set(readStoredHostState(roomId)?.revealed ?? []));
@@ -131,7 +135,7 @@ function Play() {
 
             if (action?.type === 'BUZZ_PRESS') {
                 const {team} = action.payload ?? {};
-                if (team === 1 || team === 2) {
+                if ((team === 1 || team === 2) && stepRef.current === 'question') {
                     if (buzzWinnerRef.current === null) {
                         buzzWinnerRef.current = team;
                         emitAction({type: 'PLAY_SOUND', payload: {sound: 'buzz'}});
@@ -656,9 +660,6 @@ function Play() {
 
                 {/* Buzzer Status & Reset */}
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white/60 whitespace-nowrap">
-                        🔔 {teamNames.team1} {buzzerSeats.team1 ? '✅' : '⬜'} · {teamNames.team2} {buzzerSeats.team2 ? '✅' : '⬜'}
-                    </span>
                     <button
                         type="button"
                         onClick={resetBuzzWinner}

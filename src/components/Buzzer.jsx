@@ -27,6 +27,7 @@ function Buzzer() {
     const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
     const [buzzerSeats, setBuzzerSeats] = useState({team1: null, team2: null});
     const [buzzWinner, setBuzzWinner] = useState(null);
+    const [step, setStep] = useState(null);
 
     // The server echoes send_action back to the sender as well as other room members, so
     // every outgoing action is tagged with its origin and self-echoes are ignored below.
@@ -44,10 +45,16 @@ function Buzzer() {
             if (!action || action.from === 'buzzer') return;
             if (action.type !== 'STATE_UPDATE') return;
 
-            const {teamNames: nextTeamNames, buzzerSeats: nextBuzzerSeats, buzzWinner: nextBuzzWinner} = action.payload ?? {};
+            const {
+                teamNames: nextTeamNames,
+                buzzerSeats: nextBuzzerSeats,
+                buzzWinner: nextBuzzWinner,
+                step: nextStep,
+            } = action.payload ?? {};
             if (nextTeamNames) setTeamNames(nextTeamNames);
             if (nextBuzzerSeats) setBuzzerSeats(nextBuzzerSeats);
             setBuzzWinner(nextBuzzWinner ?? null);
+            setStep(nextStep ?? null);
         };
 
         socket.on('receive_action', handleReceiveAction);
@@ -75,8 +82,10 @@ function Buzzer() {
     const seatTeamKey = team ? `team${team}` : null;
     const hasBeenReplaced = !!seatTeamKey && !!buzzerSeats[seatTeamKey] && buzzerSeats[seatTeamKey] !== playerId;
 
+    const canBuzz = step === 'question';
+
     const handleBuzz = () => {
-        if (!team || hasBeenReplaced || buzzWinner) return;
+        if (!team || hasBeenReplaced || buzzWinner || !canBuzz) return;
         emitAction({type: 'BUZZ_PRESS', payload: {team}});
     };
 
@@ -142,11 +151,14 @@ function Buzzer() {
             <button
                 type="button"
                 onClick={handleBuzz}
-                disabled={!!buzzWinner}
+                disabled={!!buzzWinner || !canBuzz}
                 className={`w-64 h-64 rounded-full border-8 border-yellow-400 bg-gradient-to-b ${teamColor} text-4xl font-black shadow-[0_0_60px_rgba(250,204,21,0.4)] transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
             >
                 BUZZ
             </button>
+            {!buzzWinner && !canBuzz && (
+                <p className="text-sm text-white/50">Waiting for the question…</p>
+            )}
             {iWon && <p className="text-2xl font-extrabold text-yellow-300">You buzzed in first!</p>}
             {someoneElseWon && (
                 <p className="text-xl font-bold text-white/70">{teamNames[`team${buzzWinner}`]} buzzed in first.</p>
