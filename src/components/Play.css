@@ -78,3 +78,8 @@
 .ff-win-gif {
   max-height: clamp(8rem, 22.22cqw, 25.6rem);
 }
+
+.ff-buzzer-qr {
+  width: clamp(4.5rem, 6vw, 10rem);
+  height: auto;
+}

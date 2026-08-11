@@ -464,7 +464,14 @@ function Play() {
 
                 {step !== 'gameOver' && buzzerUrl && (
                     <div className="fixed bottom-4 left-4 z-50 flex flex-col items-center gap-1 rounded-xl bg-gray-900/90 border-2 border-white p-2">
-                        <QRCodeSVG value={buzzerUrl} size={72} level="M" bgColor="#ffffff" fgColor="#000000"/>
+                        <QRCodeSVG
+                            value={buzzerUrl}
+                            size={144}
+                            level="M"
+                            bgColor="#ffffff"
+                            fgColor="#000000"
+                            className="ff-buzzer-qr"
+                        />
                         <span className="text-[10px] font-bold text-white/70">Scan to buzz in</span>
                         <div className="flex gap-2 text-[10px] font-bold">
                             <span className={buzzerSeats.team1 ? 'text-green-400' : 'text-white/40'}>
