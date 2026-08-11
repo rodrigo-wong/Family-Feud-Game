@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation, useSearchParams} from 'react-router-dom';
 import {io} from 'socket.io-client';
+import {QRCodeSVG} from 'qrcode.react';
 import logo from '../assets/family-feud-logo.png';
 import introSound from '../assets/sounds/introduction.mp3';
 import yesSound from '../assets/sounds/yes.mp3';
@@ -45,6 +46,9 @@ function Play() {
     const [revealed, setRevealed] = useState(() => new Set());
     const [questionIndex, setQuestionIndex] = useState(0);
     const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
+    const [buzzerSeats, setBuzzerSeats] = useState({team1: null, team2: null});
+    const [buzzWinner, setBuzzWinner] = useState(null);
+    const buzzerUrl = roomId ? `${import.meta.env.VITE_FRONTEND_URL}/buzzer?roomId=${roomId}` : '';
 
     const [game] = useState(() => {
         try {
@@ -96,6 +100,8 @@ function Play() {
             teamOneScore,
             teamTwoScore,
             teamNames,
+            buzzerSeats,
+            buzzWinner,
         };
     });
 
@@ -130,6 +136,8 @@ function Play() {
                     teamOneScore: nextTeamOneScore,
                     teamTwoScore: nextTeamTwoScore,
                     teamNames: nextTeamNames,
+                    buzzerSeats: nextBuzzerSeats,
+                    buzzWinner: nextBuzzWinner,
                 } = action.payload;
 
                 setStep(nextStep);
@@ -139,6 +147,8 @@ function Play() {
                 setTeamOneScore(nextTeamOneScore);
                 setTeamTwoScore(nextTeamTwoScore);
                 if (nextTeamNames) setTeamNames(nextTeamNames);
+                if (nextBuzzerSeats) setBuzzerSeats(nextBuzzerSeats);
+                setBuzzWinner(nextBuzzWinner ?? null);
             } else if (action.type === 'TEAM_NAMES_UPDATE') {
                 const nextTeamNames = action.payload?.teamNames;
                 if (nextTeamNames) setTeamNames(nextTeamNames);
@@ -434,6 +444,29 @@ function Play() {
               <img src={x} alt={i * "x"}/>
             </span>
                         ))}
+                    </div>
+                )}
+
+                {step !== 'gameOver' && buzzerUrl && (
+                    <div className="fixed bottom-4 left-4 z-50 flex flex-col items-center gap-1 rounded-xl bg-gray-900/90 border-2 border-white p-2">
+                        <QRCodeSVG value={buzzerUrl} size={72} level="M" bgColor="#ffffff" fgColor="#000000"/>
+                        <span className="text-[10px] font-bold text-white/70">Scan to buzz in</span>
+                        <div className="flex gap-2 text-[10px] font-bold">
+                            <span className={buzzerSeats.team1 ? 'text-green-400' : 'text-white/40'}>
+                                {teamNames.team1} {buzzerSeats.team1 ? '●' : '○'}
+                            </span>
+                            <span className={buzzerSeats.team2 ? 'text-green-400' : 'text-white/40'}>
+                                {teamNames.team2} {buzzerSeats.team2 ? '●' : '○'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {buzzWinner && (step === 'question' || step === 'board') && (
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border-4 border-yellow-400 bg-black/80 px-6 py-3 shadow-[0_0_40px_rgba(250,204,21,0.5)]">
+                        <span className="text-2xl sm:text-3xl font-black text-yellow-300">
+                            🔔 {teamNames[`team${buzzWinner}`]} buzzed in first!
+                        </span>
                     </div>
                 )}
             </div>

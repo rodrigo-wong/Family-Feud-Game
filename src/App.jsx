@@ -8,6 +8,7 @@ import Instructions from "./components/Instructions.jsx";
 import DotGridBackground from "./components/DotGridBackground.jsx";
 import HostPlay from "./components/HostPlay.jsx";
 import WaitingRoom from "./components/WaitingRoom.jsx";
+import Buzzer from "./components/Buzzer.jsx";
 import { ServerStatusProvider } from "./utils/ServerStatusContext.jsx";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/host" element={<HostPlay />} />
         <Route path="/instructions" element={<Instructions />} />
           <Route path="/waiting-room" element={<WaitingRoom />} />
+          <Route path="/buzzer" element={<Buzzer />} />
       </Routes>
     </ServerStatusProvider>
   )

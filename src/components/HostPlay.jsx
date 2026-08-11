@@ -83,6 +83,15 @@ function Play() {
     const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
     const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
 
+    // Which device (playerId) currently holds each team's buzzer seat, and which team (if
+    // any) buzzed in first for the current question. The host is the source of truth for
+    // both, since buzzer devices only ever claim a seat / press the buzzer — they don't
+    // decide who won a race, that's arbitrated here and then mirrored out via STATE_UPDATE.
+    const [buzzerSeats, setBuzzerSeats] = useState(
+        () => readStoredHostState(roomId)?.buzzerSeats ?? {team1: null, team2: null}
+    );
+    const [buzzWinner, setBuzzWinner] = useState(() => readStoredHostState(roomId)?.buzzWinner ?? null);
+
     // Picks up team name edits made on the display view (Play.jsx) and mirrors them here,
     // including the still-in-progress draft inputs on the teamNames step.
     useEffect(() => {
@@ -109,6 +118,8 @@ function Play() {
                     teamOneScore: nextTeamOneScore,
                     teamTwoScore: nextTeamTwoScore,
                     teamNames: nextTeamNames,
+                    buzzerSeats: nextBuzzerSeats,
+                    buzzWinner: nextBuzzWinner,
                 } = action.payload;
 
                 setStep(nextStep);
@@ -121,6 +132,29 @@ function Play() {
                     setTeamNames(nextTeamNames);
                     setTeamOneNameInput(nextTeamNames.team1);
                     setTeamTwoNameInput(nextTeamNames.team2);
+                }
+                if (nextBuzzerSeats) setBuzzerSeats(nextBuzzerSeats);
+                setBuzzWinner(nextBuzzWinner ?? null);
+                return;
+            }
+
+            // A buzzer device claiming/replacing a team's seat. Always overwrites — a new
+            // scan for an already-taken team simply takes over, matching how the host QR
+            // join flow also has no exclusivity check.
+            if (action?.type === 'BUZZ_CLAIM_SEAT') {
+                const {team, playerId} = action.payload ?? {};
+                if (team === 1 || team === 2) {
+                    setBuzzerSeats((prev) => ({...prev, [`team${team}`]: playerId}));
+                }
+                return;
+            }
+
+            // First press for the current question wins; later presses are ignored until
+            // the host clears buzzWinner (via Reset Buzzer or by advancing the question).
+            if (action?.type === 'BUZZ_PRESS') {
+                const {team} = action.payload ?? {};
+                if (team === 1 || team === 2) {
+                    setBuzzWinner((prev) => prev ?? team);
                 }
                 return;
             }
@@ -192,9 +226,11 @@ function Play() {
                 teamOneScore,
                 teamTwoScore,
                 teamNames,
+                buzzerSeats,
+                buzzWinner,
             },
         });
-    }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, emitAction]);
+    }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, buzzerSeats, buzzWinner, emitAction]);
 
     // Always holds the latest state snapshot so the user_joined handler below never
     // closes over stale values without having to resubscribe on every state change.
@@ -211,6 +247,8 @@ function Play() {
             teamOneScore,
             teamTwoScore,
             teamNames,
+            buzzerSeats,
+            buzzWinner,
         };
         latestStateRef.current = snapshot;
 
@@ -224,14 +262,15 @@ function Play() {
         }
     });
 
-    // The display only gets state via the STATE_UPDATE broadcast above, which fires on
-    // change, not on (re)join. If the display refreshes, it misses that history entirely,
-    // so re-send the host's current state whenever a display (re)joins the room.
+    // The display (and any buzzer device) only gets state via the STATE_UPDATE broadcast
+    // above, which fires on change, not on (re)join. If either refreshes or a new buzzer
+    // scans in mid-game, they miss that history entirely, so re-send the host's current
+    // state whenever a display or buzzer (re)joins the room.
     useEffect(() => {
         if (!roomId) return;
 
         const handleUserJoined = (data) => {
-            if (data?.role === 'display' && latestStateRef.current) {
+            if ((data?.role === 'display' || data?.role === 'buzzer') && latestStateRef.current) {
                 emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
             }
         };
@@ -277,6 +316,7 @@ function Play() {
         setRevealed(new Set());
         setStrikes(0);
         setLastStrikeClicked(null);
+        setBuzzWinner(null);
     };
 
     // Records the team/amount from the most recent award so Previous can undo it if the
@@ -654,6 +694,21 @@ function Play() {
                             {'X'.repeat(val)}
                         </button>
                     ))}
+                </div>
+
+                {/* Buzzer Status & Reset */}
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white/60 whitespace-nowrap">
+                        🔔 {teamNames.team1} {buzzerSeats.team1 ? '✅' : '⬜'} · {teamNames.team2} {buzzerSeats.team2 ? '✅' : '⬜'}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setBuzzWinner(null)}
+                        disabled={!buzzWinner}
+                        className="rounded-xl px-3 py-2 text-sm font-bold bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                    >
+                        Reset Buzzer
+                    </button>
                 </div>
             </div>
 
