@@ -75,6 +75,10 @@ function Play() {
     useEffect(() => {
         buzzWinnerRef.current = buzzWinner;
     }, [buzzWinner]);
+    const resetBuzzWinner = useCallback(() => {
+        buzzWinnerRef.current = null;
+        setBuzzWinner(null);
+    }, []);
 
     useEffect(() => {
         if (!roomId) return;
@@ -279,7 +283,7 @@ function Play() {
         setRevealed(new Set());
         setStrikes(0);
         setLastStrikeClicked(null);
-        setBuzzWinner(null);
+        resetBuzzWinner();
     };
 
     const [lastAward, setLastAward] = useState(null);
@@ -321,6 +325,7 @@ function Play() {
         if (isGameOver) return;
 
         if (step === 'logo') {
+            resetBuzzWinner();
             setStep('question');
         } else if (step === 'question') {
             setStep('board');
@@ -656,7 +661,7 @@ function Play() {
                     </span>
                     <button
                         type="button"
-                        onClick={() => setBuzzWinner(null)}
+                        onClick={resetBuzzWinner}
                         disabled={!buzzWinner}
                         className="rounded-xl px-3 py-2 text-sm font-bold bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
                     >
