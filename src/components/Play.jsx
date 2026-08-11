@@ -52,6 +52,19 @@ function Play() {
     const [buzzWinner, setBuzzWinner] = useState(null);
     const buzzerUrl = roomId ? `${import.meta.env.VITE_FRONTEND_URL}/buzzer?roomId=${roomId}` : '';
 
+    // Auto-hides the "buzzed in" banner 5s after it appears, independent of the host
+    // clearing buzzWinner (which may happen much later, e.g. on Reset Buzzer).
+    const [buzzBannerVisible, setBuzzBannerVisible] = useState(false);
+    useEffect(() => {
+        if (!buzzWinner) {
+            setBuzzBannerVisible(false);
+            return;
+        }
+        setBuzzBannerVisible(true);
+        const timer = setTimeout(() => setBuzzBannerVisible(false), 5000);
+        return () => clearTimeout(timer);
+    }, [buzzWinner]);
+
     const [game] = useState(() => {
         try {
             const stored = localStorage.getItem('familyFeudQuestions');
@@ -464,7 +477,7 @@ function Play() {
                     </div>
                 )}
 
-                {buzzWinner && (step === 'question' || step === 'board') && (
+                {buzzWinner && buzzBannerVisible && (step === 'question' || step === 'board') && (
                     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border-4 border-yellow-400 bg-black/80 px-6 py-3 shadow-[0_0_40px_rgba(250,204,21,0.5)]">
                         <span className="text-2xl sm:text-3xl font-black text-yellow-300">
                             🔔 {teamNames[`team${buzzWinner}`]} buzzed in first!
