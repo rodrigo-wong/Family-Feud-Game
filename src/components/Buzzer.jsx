@@ -4,8 +4,6 @@ import {io} from 'socket.io-client';
 
 const socket = io(import.meta.env.VITE_BACKEND_URL);
 
-const BUZZ_COOLDOWN_MS = 2000;
-
 const seatStorageKey = (roomId) => `familyFeudBuzzerSeat:${roomId}`;
 
 // A device keeps its own seat across a refresh (same team, same playerId) so reloading
@@ -29,8 +27,6 @@ function Buzzer() {
     const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
     const [buzzerSeats, setBuzzerSeats] = useState({team1: null, team2: null});
     const [buzzWinner, setBuzzWinner] = useState(null);
-    const [cooldownUntil, setCooldownUntil] = useState(0);
-    const [now, setNow] = useState(() => Date.now());
 
     // The server echoes send_action back to the sender as well as other room members, so
     // every outgoing action is tagged with its origin and self-echoes are ignored below.
@@ -76,22 +72,12 @@ function Buzzer() {
         emitAction({type: 'BUZZ_CLAIM_SEAT', payload: {team, playerId}});
     }, [roomId, team, playerId, emitAction]);
 
-    // Re-renders periodically while on cooldown so the countdown on the button updates.
-    useEffect(() => {
-        if (cooldownUntil <= Date.now()) return;
-        const interval = setInterval(() => setNow(Date.now()), 100);
-        return () => clearInterval(interval);
-    }, [cooldownUntil]);
-
     const seatTeamKey = team ? `team${team}` : null;
     const hasBeenReplaced = !!seatTeamKey && !!buzzerSeats[seatTeamKey] && buzzerSeats[seatTeamKey] !== playerId;
-    const onCooldown = now < cooldownUntil;
 
     const handleBuzz = () => {
-        if (!team || onCooldown || hasBeenReplaced || buzzWinner) return;
+        if (!team || hasBeenReplaced || buzzWinner) return;
         emitAction({type: 'BUZZ_PRESS', payload: {team}});
-        setCooldownUntil(Date.now() + BUZZ_COOLDOWN_MS);
-        setNow(Date.now());
     };
 
     const handleChangeTeam = () => {
@@ -149,7 +135,6 @@ function Buzzer() {
         : 'from-red-500 via-red-700 to-red-900';
     const iWon = buzzWinner === team;
     const someoneElseWon = !!buzzWinner && buzzWinner !== team;
-    const remainingSeconds = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
 
     return (
         <div className="min-h-dvh w-full flex flex-col items-center justify-center gap-6 p-6 text-white">
@@ -157,10 +142,10 @@ function Buzzer() {
             <button
                 type="button"
                 onClick={handleBuzz}
-                disabled={onCooldown || !!buzzWinner}
+                disabled={!!buzzWinner}
                 className={`w-64 h-64 rounded-full border-8 border-yellow-400 bg-gradient-to-b ${teamColor} text-4xl font-black shadow-[0_0_60px_rgba(250,204,21,0.4)] transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
             >
-                {onCooldown ? remainingSeconds : 'BUZZ'}
+                BUZZ
             </button>
             {iWon && <p className="text-2xl font-extrabold text-yellow-300">You buzzed in first!</p>}
             {someoneElseWon && (
