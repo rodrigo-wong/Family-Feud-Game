@@ -42,8 +42,8 @@ function Play() {
 
     const [teamOneScore, setTeamOneScore] = useState(0);
     const [teamTwoScore, setTeamTwoScore] = useState(0);
-    // Mirrors HostPlay's step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> 'gameOver'
-    const [step, setStep] = useState('teamNames');
+    // Mirrors HostPlay's step sequence: 'start' -> 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> 'gameOver'
+    const [step, setStep] = useState('start');
     const [strikes, setStrikes] = useState(0);
     const [revealed, setRevealed] = useState(() => new Set());
     const [questionIndex, setQuestionIndex] = useState(0);
@@ -360,7 +360,7 @@ function Play() {
 
                             </div>
 
-                            {step === 'logo' && (
+                            {(step === 'logo' || step === 'start') && (
                                 <div
                                     className="ff-overlay absolute inset-0 bg-[#0a1c57] border-4 border-yellow-400 shadow-[0_0_80px_rgba(250,204,21,0.35)] flex flex-col items-center justify-center gap-6 z-40">
                                     <img src={logo} alt="Family Feud logo"

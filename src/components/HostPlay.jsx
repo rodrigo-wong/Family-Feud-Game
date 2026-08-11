@@ -46,7 +46,7 @@ function Play() {
     const [teamOneScore, setTeamOneScore] = useState(() => readStoredHostState(roomId)?.teamOneScore ?? 0);
     const [teamTwoScore, setTeamTwoScore] = useState(() => readStoredHostState(roomId)?.teamTwoScore ?? 0);
 
-    const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'teamNames');
+    const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'start');
     const stepRef = useRef(step);
     useEffect(() => {
         stepRef.current = step;
@@ -258,6 +258,10 @@ function Play() {
         emitAction({type: 'PLAY_SOUND', payload: {sound: 'intro'}});
     }, [roomId, step, emitAction]);
 
+    const handleStartGame = () => {
+        setStep('teamNames');
+    };
+
     const handleSetTeamNames = () => {
         const nextTeamNames = {
             team1: teamOneNameInput.trim() || 'Team 1',
@@ -394,6 +398,24 @@ function Play() {
     };
 
     if (!roomId) return null;
+
+    if (step === 'start') {
+        return (
+            <div className="relative flex flex-col items-center h-dvh w-full overflow-y-auto p-4 text-white">
+                <div className="m-auto flex flex-col items-center">
+                    <img src={logo} alt="Family Feud logo"
+                         className="max-h-[min(16rem,30vh)] max-w-full object-contain mb-8 shrink-0"/>
+                    <button
+                        type="button"
+                        onClick={handleStartGame}
+                        className="block text-center text-3xl font-bold bg-yellow-600 border-2 rounded-2xl border-white px-6 py-3 text-white w-60 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                        START GAME
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (step === 'teamNames') {
         return (
