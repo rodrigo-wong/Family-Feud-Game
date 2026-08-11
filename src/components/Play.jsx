@@ -9,6 +9,7 @@ import noSound from '../assets/sounds/no.mp3';
 import intenseSound from '../assets/sounds/intense.mp3';
 import drumSound from '../assets/sounds/drum.mp3';
 import overSound from '../assets/sounds/over.mp3';
+import buzzSound from '../assets/sounds/buzzed-in.mp3';
 import winGif from '../assets/gif/win.gif';
 import {playSound} from '../utils/audio';
 import x from '../assets/x.png';
@@ -29,6 +30,7 @@ const SOUND_MAP = {
     over: overSound,
     intense: intenseSound,
     drum: drumSound,
+    buzz: buzzSound,
 };
 
 function Play() {

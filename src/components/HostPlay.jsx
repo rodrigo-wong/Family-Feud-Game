@@ -17,9 +17,6 @@ const HOST_STATE_MAX_AGE_SECONDS = 15 * 60;
 
 const hostStateKey = (roomId) => `familyFeudHostState:${roomId}`;
 
-// Scoped per roomId so a stale session from a previous game doesn't leak into a new one.
-// Stored as a cookie (rather than localStorage) so it naturally expires 15 minutes
-// after the host was last active, instead of lingering forever.
 function readStoredHostState(roomId) {
     if (!roomId) return null;
     try {
@@ -31,7 +28,6 @@ function readStoredHostState(roomId) {
 }
 
 function Play() {
-    // FIX: Destructure the array returned by useSearchParams
     const [searchParams] = useSearchParams();
     const roomId = searchParams.get('roomId');
 
@@ -40,16 +36,8 @@ function Play() {
 
         socket.emit('join_channel', {roomId: roomId, role: 'host'});
 
-    }, [roomId]); // Room ID won't change, so this listener stays active continuously
+    }, [roomId]);
 
-    // Broadcasts a one-off action (e.g. a sound cue) to the display view.
-    // Persistent state changes are instead broadcast by the STATE_UPDATE effect below,
-    // so the display self-heals even if an individual action event is dropped.
-    //
-    // The server echoes send_action back to the sender as well as other room members,
-    // so every outgoing action is tagged with its origin and self-echoes are ignored
-    // in handleReceiveAction below — otherwise a broadcast can bounce back and stomp
-    // on state (e.g. a draft input) that changed in the interim.
     const emitAction = useCallback((action) => {
         if (!roomId) return;
         socket.emit('send_action', {channel: roomId, action: {...action, from: 'host'}});
@@ -58,16 +46,12 @@ function Play() {
     const [teamOneScore, setTeamOneScore] = useState(() => readStoredHostState(roomId)?.teamOneScore ?? 0);
     const [teamTwoScore, setTeamTwoScore] = useState(() => readStoredHostState(roomId)?.teamTwoScore ?? 0);
 
-    // Step sequence: 'teamNames' -> 'logo' -> 'question' -> 'board' -> 'assign' -> ('reveal') -> ...
     const [step, setStep] = useState(() => readStoredHostState(roomId)?.step ?? 'teamNames');
     const [strikes, setStrikes] = useState(() => readStoredHostState(roomId)?.strikes ?? 0);
     const [lastStrikeClicked, setLastStrikeClicked] = useState(null);
     const [revealed, setRevealed] = useState(() => new Set(readStoredHostState(roomId)?.revealed ?? []));
     const [questionIndex, setQuestionIndex] = useState(() => readStoredHostState(roomId)?.questionIndex ?? 0);
 
-    // Falls back to this device's own localStorage (e.g. testing host + display in the
-    // same browser); the real data for a phone that scanned the QR code arrives via the
-    // GAME_DATA_SYNC socket action below, since that phone never had it in localStorage.
     const [game, setGame] = useState(() => {
         try {
             const stored = localStorage.getItem('familyFeudQuestions');
@@ -83,17 +67,15 @@ function Play() {
     const [teamOneNameInput, setTeamOneNameInput] = useState(teamNames.team1);
     const [teamTwoNameInput, setTeamTwoNameInput] = useState(teamNames.team2);
 
-    // Which device (playerId) currently holds each team's buzzer seat, and which team (if
-    // any) buzzed in first for the current question. The host is the source of truth for
-    // both, since buzzer devices only ever claim a seat / press the buzzer — they don't
-    // decide who won a race, that's arbitrated here and then mirrored out via STATE_UPDATE.
     const [buzzerSeats, setBuzzerSeats] = useState(
         () => readStoredHostState(roomId)?.buzzerSeats ?? {team1: null, team2: null}
     );
     const [buzzWinner, setBuzzWinner] = useState(() => readStoredHostState(roomId)?.buzzWinner ?? null);
+    const buzzWinnerRef = useRef(buzzWinner);
+    useEffect(() => {
+        buzzWinnerRef.current = buzzWinner;
+    }, [buzzWinner]);
 
-    // Picks up team name edits made on the display view (Play.jsx) and mirrors them here,
-    // including the still-in-progress draft inputs on the teamNames step.
     useEffect(() => {
         if (!roomId) return;
 
@@ -107,9 +89,6 @@ function Play() {
             }
 
             if (action?.type === 'STATE_UPDATE') {
-                // The host has no persistence of its own, so if this device refreshes it
-                // relies on the display view (which mirrors the host via the same action)
-                // to push back the last known state on rejoin.
                 const {
                     step: nextStep,
                     questionIndex: nextQuestionIndex,
@@ -138,9 +117,6 @@ function Play() {
                 return;
             }
 
-            // A buzzer device claiming/replacing a team's seat. Always overwrites — a new
-            // scan for an already-taken team simply takes over, matching how the host QR
-            // join flow also has no exclusivity check.
             if (action?.type === 'BUZZ_CLAIM_SEAT') {
                 const {team, playerId} = action.payload ?? {};
                 if (team === 1 || team === 2) {
@@ -149,11 +125,13 @@ function Play() {
                 return;
             }
 
-            // First press for the current question wins; later presses are ignored until
-            // the host clears buzzWinner (via Reset Buzzer or by advancing the question).
             if (action?.type === 'BUZZ_PRESS') {
                 const {team} = action.payload ?? {};
                 if (team === 1 || team === 2) {
+                    if (buzzWinnerRef.current === null) {
+                        buzzWinnerRef.current = team;
+                        emitAction({type: 'PLAY_SOUND', payload: {sound: 'buzz'}});
+                    }
                     setBuzzWinner((prev) => prev ?? team);
                 }
                 return;
@@ -173,10 +151,8 @@ function Play() {
         return () => {
             socket.off('receive_action', handleReceiveAction);
         };
-    }, [roomId]);
+    }, [roomId, emitAction]);
 
-    // Tracks whether the pending draft-input change was typed here (vs. arriving from the
-    // socket), so we only broadcast edits made on this view and never echo back a synced one.
     const localTeamNamesEditRef = useRef(false);
 
     const handleTeamNameInputChange = (key, value) => {
@@ -212,8 +188,6 @@ function Play() {
         );
     }, [currentAnswers, revealed]);
 
-    // Broadcasts the full game state to the display view any time it changes,
-    // so Play.jsx can mirror it without duplicating the host's step logic.
     useEffect(() => {
         if (!roomId) return;
         emitAction({
@@ -232,11 +206,6 @@ function Play() {
         });
     }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, buzzerSeats, buzzWinner, emitAction]);
 
-    // Always holds the latest state snapshot so the user_joined handler below never
-    // closes over stale values without having to resubscribe on every state change.
-    // Also persisted to a cookie (refreshed on every change) so a refresh on this
-    // device restores state immediately without waiting on a round trip to the
-    // display, and so an abandoned session is forgotten after 15 minutes of inactivity.
     const latestStateRef = useRef(null);
     useEffect(() => {
         const snapshot = {
@@ -256,16 +225,11 @@ function Play() {
             try {
                 setCookie(hostStateKey(roomId), JSON.stringify(snapshot), HOST_STATE_MAX_AGE_SECONDS);
             } catch {
-                // Cookies may be disabled (e.g. private browsing); state still lives in
-                // memory and can resync from the display over the socket.
+                //
             }
         }
     });
 
-    // The display (and any buzzer device) only gets state via the STATE_UPDATE broadcast
-    // above, which fires on change, not on (re)join. If either refreshes or a new buzzer
-    // scans in mid-game, they miss that history entirely, so re-send the host's current
-    // state whenever a display or buzzer (re)joins the room.
     useEffect(() => {
         if (!roomId) return;
 
@@ -281,7 +245,6 @@ function Play() {
         };
     }, [roomId, emitAction]);
 
-    // Plays the intro music on the display whenever the team-names section is entered
     useEffect(() => {
         if (!roomId || step !== 'teamNames') return;
         emitAction({type: 'PLAY_SOUND', payload: {sound: 'intro'}});
@@ -319,8 +282,6 @@ function Play() {
         setBuzzWinner(null);
     };
 
-    // Records the team/amount from the most recent award so Previous can undo it if the
-    // host backs up into the assign step again, instead of silently double-counting.
     const [lastAward, setLastAward] = useState(null);
 
     const revertLastAward = () => {
@@ -348,7 +309,6 @@ function Play() {
         if (team === 2) setTeamTwoScore((prev) => prev + currentBoardPoints);
         setLastAward({team, points: currentBoardPoints});
 
-        // Reveal any remaining answers one by one before moving on
         const hasUnrevealed = currentAnswers.some((_, i) => !revealed.has(i));
         if (hasUnrevealed) {
             setStep('reveal');
@@ -357,7 +317,6 @@ function Play() {
         }
     };
 
-    // Sequence controller for "Next" button
     const handleNext = () => {
         if (isGameOver) return;
 
@@ -377,8 +336,6 @@ function Play() {
         }
     };
 
-    // Describes what the "Next" button will do from the current step, so the host
-    // doesn't have to guess before clicking.
     const nextActionLabel = useMemo(() => {
         if (isGameOver) return 'Game over';
 
@@ -401,12 +358,8 @@ function Play() {
         }
     }, [step, isGameOver, currentAnswers, revealed, questionIndex, game.length, teamNames]);
 
-    // Once a question has been fully awarded and revealed, advancing past it is final —
-    // Previous can no longer reach back into it, whether that's the prior question (once
-    // 'logo' has been reached for the next one) or the last question after game over.
     const canGoPrev = !isGameOver && !(step === 'logo' && questionIndex > 0);
 
-    // Sequence controller for "Previous" button
     const handlePrev = () => {
         if (!canGoPrev) return;
 
