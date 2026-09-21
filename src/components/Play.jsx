@@ -22,6 +22,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
+const BUZZER_PRESENCE_TIMEOUT_MS = 25_000;
 
 const SOUND_MAP = {
     intro: introSound,
@@ -50,8 +51,21 @@ function Play() {
     const [questionIndex, setQuestionIndex] = useState(0);
     const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
     const [buzzerSeats, setBuzzerSeats] = useState({team1: null, team2: null});
+    const [buzzerLastSeen, setBuzzerLastSeen] = useState({team1: null, team2: null});
+    const [presenceCheckedAt, setPresenceCheckedAt] = useState(0);
     const [buzzWinner, setBuzzWinner] = useState(null);
     const buzzerUrl = roomId ? `${import.meta.env.VITE_FRONTEND_URL}/buzzer?roomId=${roomId}` : '';
+    const isBuzzerConnected = (teamKey) => {
+        const presence = buzzerLastSeen[teamKey];
+        return !!presence
+            && presence.playerId === buzzerSeats[teamKey]
+            && presenceCheckedAt - presence.timestamp < BUZZER_PRESENCE_TIMEOUT_MS;
+    };
+
+    useEffect(() => {
+        const interval = setInterval(() => setPresenceCheckedAt(Date.now()), 5_000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Auto-hides the "buzzed in" banner 5s after it appears, independent of the host
     // clearing buzzWinner (which may happen much later, e.g. on Reset Buzzer).
@@ -175,6 +189,15 @@ function Play() {
             } else if (action.type === 'TEAM_NAMES_UPDATE') {
                 const nextTeamNames = action.payload?.teamNames;
                 if (nextTeamNames) setTeamNames(nextTeamNames);
+            } else if (action.type === 'BUZZER_HEARTBEAT') {
+                const {team, playerId} = action.payload ?? {};
+                if ((team === 1 || team === 2) && playerId) {
+                    setBuzzerLastSeen((previous) => ({
+                        ...previous,
+                        [`team${team}`]: {playerId, timestamp: Date.now()},
+                    }));
+                    setPresenceCheckedAt(Date.now());
+                }
             } else if (action.type === 'PLAY_SOUND') {
                 const sound = SOUND_MAP[action.payload?.sound];
                 if (sound) playSound(sound);
@@ -485,11 +508,11 @@ function Play() {
                         />
                         <span className="text-[10px] font-bold text-white/70">Scan to buzz in</span>
                         <div className="flex gap-2 text-[10px] font-bold">
-                            <span className={buzzerSeats.team1 ? 'text-green-400' : 'text-white/40'}>
-                                {teamNames.team1} {buzzerSeats.team1 ? '●' : '○'}
+                            <span className={isBuzzerConnected('team1') ? 'text-green-400' : 'text-white/40'}>
+                                {teamNames.team1} {isBuzzerConnected('team1') ? '●' : '○'}
                             </span>
-                            <span className={buzzerSeats.team2 ? 'text-green-400' : 'text-white/40'}>
-                                {teamNames.team2} {buzzerSeats.team2 ? '●' : '○'}
+                            <span className={isBuzzerConnected('team2') ? 'text-green-400' : 'text-white/40'}>
+                                {teamNames.team2} {isBuzzerConnected('team2') ? '●' : '○'}
                             </span>
                         </div>
                     </div>

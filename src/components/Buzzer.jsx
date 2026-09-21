@@ -87,6 +87,21 @@ function Buzzer() {
         emitAction({type: 'BUZZ_CLAIM_SEAT', payload: {team, playerId}});
     }, [roomId, team, playerId, emitAction]);
 
+    // Socket.IO only reports a disconnect to the server and the disconnected device.
+    // A heartbeat lets the display expire this buzzer's QR status after a sleep or loss
+    // of network connectivity.
+    useEffect(() => {
+        if (!roomId || !team) return;
+
+        const announcePresence = () => {
+            emitAction({type: 'BUZZER_HEARTBEAT', payload: {team, playerId}});
+        };
+
+        announcePresence();
+        const interval = setInterval(announcePresence, 10_000);
+        return () => clearInterval(interval);
+    }, [roomId, team, playerId, emitAction]);
+
     const seatTeamKey = team ? `team${team}` : null;
     const hasBeenReplaced = !!seatTeamKey && !!buzzerSeats[seatTeamKey] && buzzerSeats[seatTeamKey] !== playerId;
 
