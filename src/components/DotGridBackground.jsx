@@ -1,13 +1,18 @@
 import { useMemo } from 'react';
 
+function pseudoRandom(index, salt) {
+  const value = Math.sin(index * 12.9898 + salt) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 function DotGridBackground({ columns = 32, rows = 18, className = '' }) {
   const dots = useMemo(() => {
     const total = columns * rows;
-    return Array.from({ length: total }, () => {
+    return Array.from({ length: total }, (_, index) => {
         return ({
-            delay: (8 * Math.random()).toFixed(2),
-            duration: (5 + Math.random() * 7).toFixed(2),
-            peak: (0.25 + Math.random() * 0.65).toFixed(2),
+            delay: (8 * pseudoRandom(index, 1)).toFixed(2),
+            duration: (5 + pseudoRandom(index, 2) * 7).toFixed(2),
+            peak: (0.25 + pseudoRandom(index, 3) * 0.65).toFixed(2),
         });
     });
   }, [columns, rows]);

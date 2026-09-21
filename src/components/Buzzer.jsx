@@ -39,7 +39,12 @@ function Buzzer() {
     useEffect(() => {
         if (!roomId) return;
 
-        socket.emit('join_channel', {roomId, role: 'buzzer'});
+        const joinRoom = () => {
+            socket.emit('join_channel', {roomId, role: 'buzzer'});
+            if (team) {
+                emitAction({type: 'BUZZ_CLAIM_SEAT', payload: {team, playerId}});
+            }
+        };
 
         const handleReceiveAction = ({action}) => {
             if (!action || action.from === 'buzzer') return;
@@ -58,11 +63,14 @@ function Buzzer() {
         };
 
         socket.on('receive_action', handleReceiveAction);
+        socket.on('connect', joinRoom);
+        joinRoom();
 
         return () => {
             socket.off('receive_action', handleReceiveAction);
+            socket.off('connect', joinRoom);
         };
-    }, [roomId]);
+    }, [roomId, team, playerId, emitAction]);
 
     // Claims (or re-claims) this device's team seat whenever a team is selected. The host
     // always overwrites on claim, so a later scan for the same team simply takes over.

@@ -34,8 +34,16 @@ function Play() {
     useEffect(() => {
         if (!roomId) return;
 
-        socket.emit('join_channel', {roomId: roomId, role: 'host'});
+        const joinRoom = () => {
+            socket.emit('join_channel', {roomId, role: 'host'});
+        };
 
+        socket.on('connect', joinRoom);
+        joinRoom();
+
+        return () => {
+            socket.off('connect', joinRoom);
+        };
     }, [roomId]);
 
     const emitAction = useCallback((action) => {
@@ -237,6 +245,22 @@ function Play() {
             }
         }
     });
+
+    useEffect(() => {
+        if (!roomId) return;
+
+        const restoreRoomState = () => {
+            if (latestStateRef.current) {
+                emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
+            }
+        };
+
+        socket.on('connect', restoreRoomState);
+
+        return () => {
+            socket.off('connect', restoreRoomState);
+        };
+    }, [roomId, emitAction]);
 
     useEffect(() => {
         if (!roomId) return;
