@@ -92,6 +92,30 @@ function Play() {
         setBuzzWinner(null);
     }, []);
 
+    const latestStateRef = useRef(null);
+    useEffect(() => {
+        const snapshot = {
+            step,
+            questionIndex,
+            revealed: Array.from(revealed),
+            strikes,
+            teamOneScore,
+            teamTwoScore,
+            teamNames,
+            buzzerSeats,
+            buzzWinner,
+        };
+        latestStateRef.current = snapshot;
+
+        if (roomId) {
+            try {
+                setCookie(hostStateKey(roomId), JSON.stringify(snapshot), HOST_STATE_MAX_AGE_SECONDS);
+            } catch {
+                //
+            }
+        }
+    });
+
     useEffect(() => {
         if (!roomId) return;
 
@@ -101,6 +125,13 @@ function Play() {
             if (action?.type === 'GAME_DATA_SYNC') {
                 const questions = action.payload?.questions;
                 if (Array.isArray(questions)) setGame(questions);
+                return;
+            }
+
+            if (action?.type === 'STATE_SYNC_REQUEST') {
+                if (latestStateRef.current) {
+                    emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
+                }
                 return;
             }
 
@@ -221,30 +252,6 @@ function Play() {
             },
         });
     }, [roomId, step, questionIndex, revealed, strikes, teamOneScore, teamTwoScore, teamNames, buzzerSeats, buzzWinner, emitAction]);
-
-    const latestStateRef = useRef(null);
-    useEffect(() => {
-        const snapshot = {
-            step,
-            questionIndex,
-            revealed: Array.from(revealed),
-            strikes,
-            teamOneScore,
-            teamTwoScore,
-            teamNames,
-            buzzerSeats,
-            buzzWinner,
-        };
-        latestStateRef.current = snapshot;
-
-        if (roomId) {
-            try {
-                setCookie(hostStateKey(roomId), JSON.stringify(snapshot), HOST_STATE_MAX_AGE_SECONDS);
-            } catch {
-                //
-            }
-        }
-    });
 
     useEffect(() => {
         if (!roomId) return;

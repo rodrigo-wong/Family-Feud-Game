@@ -133,6 +133,7 @@ function Play() {
 
         const joinRoom = () => {
             socket.emit('join_channel', {roomId, role: 'display'});
+            emitAction({type: 'STATE_SYNC_REQUEST'});
         };
 
         // The host device only has access to its own localStorage, so it can't see the
