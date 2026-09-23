@@ -23,6 +23,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL);
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
 const BUZZER_PRESENCE_TIMEOUT_MS = 10_000;
+const HOST_PRESENCE_TIMEOUT_MS = 10_000;
 
 const SOUND_MAP = {
     intro: introSound,
@@ -52,15 +53,20 @@ function Play() {
     const [teamNames, setTeamNames] = useState({team1: 'Team 1', team2: 'Team 2'});
     const [buzzerSeats, setBuzzerSeats] = useState({team1: null, team2: null});
     const [buzzerLastSeen, setBuzzerLastSeen] = useState({team1: null, team2: null});
+    const [hostLastSeen, setHostLastSeen] = useState(null);
     const [presenceCheckedAt, setPresenceCheckedAt] = useState(0);
     const [buzzWinner, setBuzzWinner] = useState(null);
+    const [showHostQr, setShowHostQr] = useState(false);
     const buzzerUrl = roomId ? `${import.meta.env.VITE_FRONTEND_URL}/buzzer?roomId=${roomId}` : '';
+    const hostUrl = roomId ? `${import.meta.env.VITE_FRONTEND_URL}/host?roomId=${roomId}` : '';
     const isBuzzerConnected = (teamKey) => {
         const presence = buzzerLastSeen[teamKey];
         return !!presence
             && presence.playerId === buzzerSeats[teamKey]
             && presenceCheckedAt - presence.timestamp < BUZZER_PRESENCE_TIMEOUT_MS;
     };
+    const isHostConnected = !!hostLastSeen
+        && presenceCheckedAt - hostLastSeen.timestamp < HOST_PRESENCE_TIMEOUT_MS;
 
     useEffect(() => {
         const interval = setInterval(() => setPresenceCheckedAt(Date.now()), 1_000);
@@ -187,6 +193,24 @@ function Play() {
                 stepRef.current = nextStep;
                 if (nextBuzzWinner) setBuzzBannerExpired(false);
                 setBuzzWinner(nextBuzzWinner ?? null);
+            } else if (action.type === 'HOST_STATE_REQUEST') {
+                emitAction({type: 'GAME_DATA_SYNC', payload: {questions: game}});
+                if (latestStateRef.current) {
+                    emitAction({type: 'STATE_UPDATE', payload: latestStateRef.current});
+                }
+            } else if (action.type === 'HOST_HEARTBEAT') {
+                const hostId = action.payload?.hostId;
+                if (hostId) {
+                    setHostLastSeen({hostId, timestamp: Date.now()});
+                    setPresenceCheckedAt(Date.now());
+                    setShowHostQr(false);
+                }
+            } else if (action.type === 'HOST_DISCONNECTED') {
+                const hostId = action.payload?.hostId;
+                setHostLastSeen((previous) => (
+                    previous?.hostId === hostId ? null : previous
+                ));
+                setPresenceCheckedAt(Date.now());
             } else if (action.type === 'TEAM_NAMES_UPDATE') {
                 const nextTeamNames = action.payload?.teamNames;
                 if (nextTeamNames) setTeamNames(nextTeamNames);
@@ -527,6 +551,33 @@ function Play() {
                                 {teamNames.team2} {isBuzzerConnected('team2') ? '●' : '○'}
                             </span>
                         </div>
+                    </div>
+                )}
+
+                {!isHostConnected && hostUrl && (
+                    <div className="fixed bottom-4 right-20 z-50">
+                        {showHostQr ? (
+                            <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-yellow-400 bg-gray-900/90 p-3">
+                                <QRCodeSVG
+                                    value={hostUrl}
+                                    size={160}
+                                    level="M"
+                                    bgColor="#ffffff"
+                                    fgColor="#000000"
+                                />
+                                <span className="text-xs font-bold text-yellow-300">
+                                    Scan to take over hosting
+                                </span>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowHostQr(true)}
+                                className="rounded-xl border-2 border-yellow-400 bg-gray-900 px-4 py-2 text-sm font-bold text-yellow-300 hover:bg-gray-800 transition cursor-pointer"
+                            >
+                                Host Disconnected — Show Host QR
+                            </button>
+                        )}
                     </div>
                 )}
 

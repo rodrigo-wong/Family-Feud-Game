@@ -14,6 +14,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL);
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
 const HOST_STATE_MAX_AGE_SECONDS = 15 * 60;
+const HOST_HEARTBEAT_INTERVAL_MS = 3_000;
 
 const hostStateKey = (roomId) => `familyFeudHostState:${roomId}`;
 
@@ -30,12 +31,19 @@ function readStoredHostState(roomId) {
 function Play() {
     const [searchParams] = useSearchParams();
     const roomId = searchParams.get('roomId');
+    const [hostId] = useState(() => crypto.randomUUID());
+
+    const emitAction = useCallback((action) => {
+        if (!roomId) return;
+        socket.emit('send_action', {channel: roomId, action: {...action, from: 'host'}});
+    }, [roomId]);
 
     useEffect(() => {
         if (!roomId) return;
 
         const joinRoom = () => {
             socket.emit('join_channel', {roomId, role: 'host'});
+            emitAction({type: 'HOST_STATE_REQUEST'});
         };
 
         socket.on('connect', joinRoom);
@@ -44,12 +52,29 @@ function Play() {
         return () => {
             socket.off('connect', joinRoom);
         };
-    }, [roomId]);
+    }, [roomId, emitAction]);
 
-    const emitAction = useCallback((action) => {
+    useEffect(() => {
         if (!roomId) return;
-        socket.emit('send_action', {channel: roomId, action: {...action, from: 'host'}});
-    }, [roomId]);
+
+        const announcePresence = () => {
+            emitAction({type: 'HOST_HEARTBEAT', payload: {hostId}});
+        };
+        const announceDeparture = () => {
+            if (socket.connected) {
+                emitAction({type: 'HOST_DISCONNECTED', payload: {hostId}});
+            }
+        };
+
+        announcePresence();
+        const interval = setInterval(announcePresence, HOST_HEARTBEAT_INTERVAL_MS);
+        window.addEventListener('pagehide', announceDeparture);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('pagehide', announceDeparture);
+        };
+    }, [roomId, hostId, emitAction]);
 
     const [teamOneScore, setTeamOneScore] = useState(() => readStoredHostState(roomId)?.teamOneScore ?? 0);
     const [teamTwoScore, setTeamTwoScore] = useState(() => readStoredHostState(roomId)?.teamTwoScore ?? 0);
@@ -127,6 +152,8 @@ function Play() {
                 if (Array.isArray(questions)) setGame(questions);
                 return;
             }
+
+            if (action?.type === 'HOST_STATE_REQUEST') return;
 
             if (action?.type === 'STATE_SYNC_REQUEST') {
                 if (latestStateRef.current) {
