@@ -22,7 +22,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 const SLOT_COUNT = 8;
 const TEAM_NAMES_DEBOUNCE_MS = 2000;
-const BUZZER_PRESENCE_TIMEOUT_MS = 25_000;
+const BUZZER_PRESENCE_TIMEOUT_MS = 10_000;
 
 const SOUND_MAP = {
     intro: introSound,
@@ -63,7 +63,7 @@ function Play() {
     };
 
     useEffect(() => {
-        const interval = setInterval(() => setPresenceCheckedAt(Date.now()), 5_000);
+        const interval = setInterval(() => setPresenceCheckedAt(Date.now()), 1_000);
         return () => clearInterval(interval);
     }, []);
 
@@ -197,6 +197,17 @@ function Play() {
                         ...previous,
                         [`team${team}`]: {playerId, timestamp: Date.now()},
                     }));
+                    setPresenceCheckedAt(Date.now());
+                }
+            } else if (action.type === 'BUZZER_DISCONNECTED') {
+                const {team, playerId} = action.payload ?? {};
+                if ((team === 1 || team === 2) && playerId) {
+                    setBuzzerLastSeen((previous) => {
+                        const teamKey = `team${team}`;
+                        return previous[teamKey]?.playerId === playerId
+                            ? {...previous, [teamKey]: null}
+                            : previous;
+                    });
                     setPresenceCheckedAt(Date.now());
                 }
             } else if (action.type === 'PLAY_SOUND') {

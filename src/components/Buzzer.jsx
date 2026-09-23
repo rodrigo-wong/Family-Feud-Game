@@ -96,10 +96,20 @@ function Buzzer() {
         const announcePresence = () => {
             emitAction({type: 'BUZZER_HEARTBEAT', payload: {team, playerId}});
         };
+        const announceDeparture = () => {
+            if (socket.connected) {
+                emitAction({type: 'BUZZER_DISCONNECTED', payload: {team, playerId}});
+            }
+        };
 
         announcePresence();
-        const interval = setInterval(announcePresence, 10_000);
-        return () => clearInterval(interval);
+        const interval = setInterval(announcePresence, 3_000);
+        window.addEventListener('pagehide', announceDeparture);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('pagehide', announceDeparture);
+        };
     }, [roomId, team, playerId, emitAction]);
 
     const seatTeamKey = team ? `team${team}` : null;
